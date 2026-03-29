@@ -37,53 +37,55 @@ def _should_include(path: str, extensions: list[str] | None) -> bool:
     return any(path.endswith(ext) for ext in extensions)
 
 
-class _DebouncedHandler(FileSystemEventHandler):
-    def __init__(
-        self,
-        on_change: Callable[[str, str], None] | None,
-        debounce: float,
-        extensions: list[str] | None,
-    ) -> None:
-        super().__init__()
-        self._on_change = on_change
-        self._debounce = debounce
-        self._extensions = extensions
-        self._timer: threading.Timer | None = None
-        self._pending: list[tuple[str, str]] = []
-        self._lock = threading.Lock()
+if _HAS_WATCHDOG:
 
-    def _record(self, event_type: str, src_path: str) -> None:
-        if event_type == "deleted" or Path(src_path).is_file():
-            if not _should_include(src_path, self._extensions):
-                return
+    class _DebouncedHandler(FileSystemEventHandler):
+        def __init__(
+            self,
+            on_change: Callable[[str, str], None] | None,
+            debounce: float,
+            extensions: list[str] | None,
+        ) -> None:
+            super().__init__()
+            self._on_change = on_change
+            self._debounce = debounce
+            self._extensions = extensions
+            self._timer: threading.Timer | None = None
+            self._pending: list[tuple[str, str]] = []
+            self._lock = threading.Lock()
+
+        def _record(self, event_type: str, src_path: str) -> None:
+            if event_type == "deleted" or Path(src_path).is_file():
+                if not _should_include(src_path, self._extensions):
+                    return
+                with self._lock:
+                    self._pending.append((event_type, src_path))
+                    if self._timer is not None:
+                        self._timer.cancel()
+                    self._timer = threading.Timer(self._debounce, self._flush)
+                    self._timer.start()
+
+        def _flush(self) -> None:
             with self._lock:
-                self._pending.append((event_type, src_path))
-                if self._timer is not None:
-                    self._timer.cancel()
-                self._timer = threading.Timer(self._debounce, self._flush)
-                self._timer.start()
+                items = list(self._pending)
+                self._pending.clear()
+                self._timer = None
+            for event_type, src_path in items:
+                logger.info("File %s: %s", event_type, src_path)
+                if self._on_change is not None:
+                    self._on_change(event_type, src_path)
 
-    def _flush(self) -> None:
-        with self._lock:
-            items = list(self._pending)
-            self._pending.clear()
-            self._timer = None
-        for event_type, src_path in items:
-            logger.info("File %s: %s", event_type, src_path)
-            if self._on_change is not None:
-                self._on_change(event_type, src_path)
+        def on_created(self, event: FileSystemEvent) -> None:
+            if not event.is_directory:
+                self._record("created", event.src_path)
 
-    def on_created(self, event: FileSystemEvent) -> None:
-        if not event.is_directory:
-            self._record("created", event.src_path)
+        def on_modified(self, event: FileSystemEvent) -> None:
+            if not event.is_directory:
+                self._record("modified", event.src_path)
 
-    def on_modified(self, event: FileSystemEvent) -> None:
-        if not event.is_directory:
-            self._record("modified", event.src_path)
-
-    def on_deleted(self, event: FileSystemEvent) -> None:
-        if not event.is_directory:
-            self._record("deleted", event.src_path)
+        def on_deleted(self, event: FileSystemEvent) -> None:
+            if not event.is_directory:
+                self._record("deleted", event.src_path)
 
 
 def watch(
