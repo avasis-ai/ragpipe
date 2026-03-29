@@ -80,6 +80,8 @@ pipeline.run()
 
 **That's it.** No boilerplate, no frameworks, no config files (unless you want them).
 
+<img src="https://raw.githubusercontent.com/avasis-ai/ragpipe/main/.github/demo-screenshot.png" alt="RAGPipe Interactive Demo" width="600">
+
 <a href="https://avasis-ai.github.io/ragpipe/demo.html"><img src="https://img.shields.io/badge/try_demo-interactive-orange?style=for-the-badge" alt="Try Demo"></a>
 
 ---
@@ -281,6 +283,8 @@ for doc in docs:
 ---
 
 ## Benchmarks
+
+<img src="https://raw.githubusercontent.com/avasis-ai/ragpipe/main/.github/benchmark.svg" alt="RAGPipe vs LangChain vs LlamaIndex Benchmark" width="600">
 
 Indexed the **LangChain** repo (2,267 Python files, 7,388 chunks) on a 64-core Xeon:
 

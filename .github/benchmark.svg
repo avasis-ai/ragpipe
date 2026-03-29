@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" font-family="system-ui,-apple-system,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#09090B"/>
+      <stop offset="100%" stop-color="#111113"/>
+    </linearGradient>
+    <linearGradient id="rp" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+    <linearGradient id="lc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#27272A"/>
+      <stop offset="100%" stop-color="#3F3F46"/>
+    </linearGradient>
+    <linearGradient id="li" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#27272A"/>
+      <stop offset="100%" stop-color="#3F3F46"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="420" rx="16" fill="url(#bg)"/>
+  <rect x="1" y="1" width="718" height="418" rx="15" fill="none" stroke="#27272A" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="36" y="44" fill="#FAFAFA" font-size="18" font-weight="700">RAGPipe vs LangChain vs LlamaIndex</text>
+  <text x="36" y="66" fill="#71717A" font-size="12">Indexed LangChain repo — 2,267 files, 7,388 chunks</text>
+
+  <!-- Legend -->
+  <rect x="460" y="30" width="12" height="12" rx="3" fill="url(#rp)"/>
+  <text x="478" y="41" fill="#A1A1AA" font-size="12">RAGPipe</text>
+  <rect x="548" y="30" width="12" height="12" rx="3" fill="url(#lc)"/>
+  <text x="566" y="41" fill="#A1A1AA" font-size="12">LangChain</text>
+  <rect x="640" y="30" width="12" height="12" rx="3" fill="url(#li)"/>
+  <text x="658" y="41" fill="#A1A1AA" font-size="11">LlamaIndex</text>
+
+  <!-- Chart area: x=140 to x=680, baseline -->
+  <!-- Grid lines -->
+  <line x1="140" y1="90" x2="140" y2="390" stroke="#27272A" stroke-width="1"/>
+  <line x1="300" y1="90" x2="300" y2="390" stroke="#1F1F23" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="460" y1="90" x2="460" y2="390" stroke="#1F1F23" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="620" y1="90" x2="620" y2="390" stroke="#1F1F23" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- ROW 1: Lines of Code (max ~40, scale: 40 LOC = 540px, 5 LOC = 67.5px, 3 LOC = 40.5px) -->
+  <text x="20" y="120" fill="#FAFAFA" font-size="13" font-weight="600">Lines of Code</text>
+  <text x="20" y="136" fill="#71717A" font-size="11">for basic RAG</text>
+  <rect x="140" y="110" width="40" height="32" rx="6" fill="url(#rp)"/>
+  <text x="186" y="131" fill="#A78BFA" font-size="12" font-weight="600">3 lines</text>
+  <rect x="140" y="146" width="540" height="32" rx="6" fill="url(#lc)"/>
+  <text x="686" y="167" fill="#71717A" font-size="12" text-anchor="end">40 lines</text>
+  <rect x="140" y="182" width="67" height="32" rx="6" fill="url(#li)"/>
+  <text x="213" y="203" fill="#71717A" font-size="12">5 lines</text>
+
+  <!-- ROW 2: Packages to install (1 vs 5 vs 3) -->
+  <text x="20" y="246" fill="#FAFAFA" font-size="13" font-weight="600">Packages</text>
+  <text x="20" y="262" fill="#71717A" font-size="11">to install</text>
+  <rect x="140" y="236" width="54" height="32" rx="6" fill="url(#rp)"/>
+  <text x="200" y="257" fill="#A78BFA" font-size="12" font-weight="600">1 pkg</text>
+  <rect x="140" y="272" width="270" height="32" rx="6" fill="url(#lc)"/>
+  <text x="416" y="293" fill="#71717A" font-size="12">5+ pkgs</text>
+  <rect x="140" y="308" width="162" height="32" rx="6" fill="url(#li)"/>
+  <text x="308" y="329" fill="#71717A" font-size="12">2-3 pkgs</text>
+
+  <!-- Bottom: Highlight -->
+  <rect x="36" y="370" width="648" height="34" rx="8" fill="#7C3AED" fill-opacity="0.1" stroke="#7C3AED" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="360" y="392" fill="#A78BFA" font-size="13" font-weight="600" text-anchor="middle">RAGPipe: 13x less code · 5x fewer packages · 10,468 chunks/s throughput</text>
+</svg>
