@@ -138,7 +138,8 @@ def list_hooks(repo_path: str = ".") -> list[dict[str, Any]]:
             line = line.strip()
             if line.startswith("echo") and "output:" in line:
                 paren = line.index("output:") + len("output:")
-                rest = line[paren:].strip().rstrip(")")
+                rest = line[paren:].strip()
+                rest = rest.strip('"').strip("'").rstrip(")")
                 output_path = rest.strip()
                 break
 
