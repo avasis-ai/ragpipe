@@ -5,6 +5,8 @@
 **RAG in 3 functions.**
 
 [![GitHub stars](https://img.shields.io/github/stars/avasis-ai/ragpipe?style=social)](https://github.com/avasis-ai/ragpipe)
+[![PyPI version](https://img.shields.io/pypi/v/ragpipe-ai?color=blue)](https://pypi.org/project/ragpipe-ai/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/ragpipe-ai?color=blue)](https://pypi.org/project/ragpipe-ai/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-BSL_1.1-green.svg)](LICENSE)
 
@@ -41,8 +43,19 @@ RAGPipe does all 5 steps in one pipeline. You tell it where your data is and whe
 ## Install
 
 ```bash
-pip install ragpipe[cli]
+pip install ragpipe-ai
 ```
+
+<details>
+<summary>With extras</summary>
+
+```bash
+pip install 'ragpipe-ai[cli,web]'    # CLI + web scraping
+pip install 'ragpipe-ai[qdrant]'      # Qdrant vector DB
+pip install 'ragpipe-ai[all]'         # everything
+```
+
+</details>
 
 ## The 3 functions
 
@@ -190,7 +203,7 @@ ragpipe run pipeline.yaml
 |----------|---------|-------|
 | 1 | **Ollama** (local) | `ollama pull nomic-embed-text` |
 | 2 | **OpenAI** | Set `OPENAI_API_KEY` |
-| 3 | **sentence-transformers** (local) | `pip install ragpipe[local]` |
+| 3 | **sentence-transformers** (local) | `pip install 'ragpipe-ai[local]'` |
 
 Or point to any OpenAI-compatible API:
 
@@ -267,6 +280,27 @@ for doc in docs:
 
 ---
 
+## Benchmarks
+
+Indexed the **LangChain** repo (2,267 Python files, 7,388 chunks) on a 64-core Xeon:
+
+| Metric | Result |
+|--------|--------|
+| File discovery | **0.32s** |
+| Chunking | **0.09s** |
+| JSON persistence (14.8 MB) | **0.29s** |
+| **Total index time** | **0.71s** |
+| **Throughput** | **10,468 chunks/s** |
+| Query (keyword, top-5) | **0.20s** |
+
+One-liner equivalent:
+```bash
+ragpipe ingest ./langchain --chunk-size 1000
+ragpipe query "How does the chain interface work?"
+```
+
+---
+
 ## Comparison
 
 How does RAGPipe compare to the existing tools?
@@ -299,6 +333,7 @@ response = index.as_query_engine().query("What is task decomposition?")
 
 **RAGPipe** (3 lines, 1 package, zero config):
 ```bash
+pip install ragpipe-ai
 ragpipe index ./docs
 ragpipe query "What is task decomposition?"
 ```

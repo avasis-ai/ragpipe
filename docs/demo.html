@@ -184,6 +184,15 @@ code,pre,.mono{font-family:var(--font-mono)}
   background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:500;
   text-decoration:none;transition:all .2s ease}
 .cta-link:hover{border-color:var(--accent);transform:translateY(-1px)}
+.cta-install{display:flex;align-items:center;gap:10px;padding:12px 20px;margin-bottom:24px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;
+  font-family:var(--font-mono);font-size:14px;color:var(--text);transition:all .2s ease;
+  user-select:none;position:relative}
+.cta-install:hover{border-color:var(--accent)}
+.cta-install-prompt{color:var(--green);font-weight:600}
+.cta-install-copied{position:absolute;right:16px;color:var(--green);font-size:12px;font-weight:600;
+  opacity:0;transition:opacity .2s ease}
+.cta-install-copied.show{opacity:1}
 
 @keyframes scan{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -287,14 +296,19 @@ Smart indexing auto-detects your project type and ignores the right files. Git h
   <div class="cta">
     <h2>Try it yourself</h2>
     <p>One install. Zero config. Any language. Works offline.</p>
+    <div class="cta-install" id="cta-install" onclick="copyInstall()">
+      <span class="cta-install-prompt">$</span>
+      <code>pip install ragpipe-ai</code>
+      <span class="cta-install-copied" id="cta-copied">Copied!</span>
+    </div>
     <div class="cta-links">
       <a href="https://github.com/avasis-ai/ragpipe" target="_blank">
-        <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M8 0C3.58 0 0 3.58 0s8 3.58 8 8-3.58 8-8-3.58-8-8zm3.5 5.5a.5.5 0 1 1-1 1 .5.5 0 0 1 1-1V7a.5.5 0 0 0-1-1V3.5z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         GitHub
       </a>
-      <a href="https://github.com/avasis-ai/ragpipe#install" target="_blank">
+      <a href="https://pypi.org/project/ragpipe-ai/" target="_blank">
         <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M4 4h3l3 8H4V4zm0 8h2v4H4v-4zm10-4v2h-2v2h2v-2zM8 2v2h2V4H8v2z"/></svg>
-        Install
+        PyPI
       </a>
       <a href="https://github.com/avasis-ai/ragpipe#comparison" target="_blank">
         <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M4 6h2v8H4V6zm10 0h2v8h-2V6z"/></svg>
@@ -331,7 +345,7 @@ RAGPipe is a declarative RAG pipeline library for Python that converts raw docum
 
 ## Installation
 
-pip install ragpipe[cli]
+pip install ragpipe-ai
 
 ## Quick Start
 
@@ -529,6 +543,13 @@ $('qInp').addEventListener('input',e=>{
 });
 
 setTimeout(go,600);
+
+function copyInstall(){
+  navigator.clipboard.writeText('pip install ragpipe-ai');
+  const el=document.getElementById('cta-copied');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1500);
+}
 </script>
 </body>
 </html>
