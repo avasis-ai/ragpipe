@@ -513,7 +513,7 @@ app.add_typer(macos_app)
 
 
 @macos_app.command()
-def spotlight_search_cmd(
+def spotlight_cmd(
     query_text: str = typer.Argument(..., help="Spotlight search query"),
     path: str = typer.Option("/", "--path", help="Search scope"),
 ):
@@ -541,7 +541,7 @@ def spotlight_search_cmd(
 
 
 @macos_app.command("index")
-def spotlight_index_cmd(
+def spotlight_index(
     path: str = typer.Argument(".", help="Directory to index via Spotlight"),
 ):
     _print_banner()
