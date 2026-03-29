@@ -17,6 +17,28 @@ Zero config. Works with Ollama, OpenAI, Qdrant, Pinecone, or just a JSON file.
 
 ---
 
+## What is RAG?
+
+**RAG (Retrieval-Augmented Generation)** is how you give an AI access to your own data. Instead of guessing answers, the AI first searches your documents, finds the relevant parts, and then generates an answer based on what it found.
+
+The problem? Getting your data into a searchable format is painful. You need to:
+
+1. **Extract** text from files, websites, code repos
+2. **Chunk** it into smaller pieces (AI can't read a 100-page PDF at once)
+3. **Embed** each chunk into numbers (so similar text gets similar numbers)
+4. **Store** those embeddings in a vector database
+5. **Search** when someone asks a question
+
+RAGPipe does all 5 steps in one pipeline. You tell it where your data is and where it should go. That's it.
+
+## Architecture
+
+<img src="https://raw.githubusercontent.com/avasis-ai/ragpipe/main/.github/architecture.svg" alt="RAGPipe Architecture" width="600">
+
+**How it works:** Your data flows through three stages — Sources pull data in, Transforms process it (clean, chunk, embed), and Sinks store the results in a vector database. When you query, RAGPipe searches the stored embeddings and returns the most relevant chunks.
+
+---
+
 ## Install
 
 ```bash
