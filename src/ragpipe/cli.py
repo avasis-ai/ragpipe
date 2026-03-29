@@ -450,8 +450,8 @@ def remove(
         raise typer.Exit(1)
 
 
-@git_app.command()
-def list_hooks(
+@git_app.command("list")
+def list_installed(
     repo_path: str = typer.Argument(".", help="Git repo path"),
 ):
     from ragpipe.integrations.git_hooks import list_hooks
