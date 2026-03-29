@@ -1,242 +1,222 @@
-# RAGPipe
+<div align="center">
 
-Declarative RAG data pipeline library for Python. Connect **Sources** to **Transforms** to **Sinks** with a clean, composable API.
+<img src="https://raw.githubusercontent.com/avasis-ai/ragpipe/main/.github/banner.svg" alt="RAGPipe" width="400">
 
-```
-Source → Transform → Transform → ... → Sink
-```
+**RAG in 3 functions.**
 
-## Features
+[![PyPI version](https://img.shields.io/pypi/v/ragpipe?color= cyan)](https://pypi.org/project/ragpipe/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/License-BSL_1.1-green.svg)](LICENSE)
+[![install](https://img.shields.io/badge/install-pip_install_ragpipe-orange)](#install)
 
-- **Sources**: Git repos (GitHub API), local files, web scraping with crawling
-- **Transforms**: Recursive/semantic/fixed-size chunking, HTML cleaning, PII redaction, embeddings
-- **Sinks**: Qdrant, Pinecone, local JSON
-- **Declarative API**: Chain sources, transforms, and sinks into pipelines
-- **Dry run**: Preview output without writing to any sink
-- **Zero magic**: Pure Python, no hidden state, fully inspectable
+*Sources → Transforms → Sinks for vector databases.*
+
+Zero config. Works with Ollama, OpenAI, Qdrant, Pinecone, or just a JSON file.
+
+</div>
+
+---
 
 ## Install
 
 ```bash
-pip install ragpipe
-
-# With extras
-pip install ragpipe[web]          # WebSource (beautifulsoup4)
-pip install ragpipe[qdrant]       # QdrantSink
-pip install ragpipe[pinecone]     # PineconeSink
-pip install ragpipe[embeddings]   # SemanticChunker with OpenAI embeddings
-pip install ragpipe[all]          # Everything
+pip install ragpipe[cli]
 ```
 
-## Quick Start
-
-### Ingest a Git repo into Qdrant
+## The 3 functions
 
 ```python
-from ragpipe import Pipeline, GitSource, RecursiveChunker, EmbeddingTransform, QdrantSink
+import ragpipe
+
+# 1. Ingest anything — files, git repos, web pages
+ragpipe.ingest("./docs", sink="json", sink_path="./my_data.json")
+
+# 2. Query your data
+results = ragpipe.query("What is the refund policy?", sink_path="./my_data.json")
+print(results[0].content)
+
+# 3. Pipe — full control with the Pipeline API
+pipeline = ragpipe.Pipeline()
+pipeline.add_source(ragpipe.GitSource("https://github.com/owner/repo"))
+pipeline.add_transform(ragpipe.RecursiveChunker(chunk_size=512))
+pipeline.add_transform(ragpipe.AutoEmbed())
+pipeline.add_sink(ragpipe.QdrantSink("my-repo"))
+pipeline.run()
+```
+
+**That's it.** No boilerplate, no frameworks, no config files (unless you want them).
+
+---
+
+## CLI
+
+```bash
+# Create a starter pipeline config
+ragpipe init
+
+# Ingest a directory
+ragpipe ingest ./docs
+
+# Ingest a GitHub repo
+ragpipe ingest https://github.com/owner/repo --embed
+
+# Scrape a website
+ragpipe ingest https://docs.example.com
+
+# Query your data
+ragpipe query "How does auth work?"
+
+# Run a YAML pipeline
+ragpipe run pipeline.yaml
+```
+
+### With embeddings (auto-detects Ollama → OpenAI → sentence-transformers)
+
+```bash
+ragpipe ingest ./docs --embed --sink qdrant --collection my-kb
+ragpipe query "What features are in v2?" --sink qdrant
+```
+
+---
+
+## YAML Pipelines
+
+Drop a `pipeline.yaml` in your project and run it with one command:
+
+```yaml
+source:
+  type: git
+  repo_url: https://github.com/owner/repo
+  file_patterns:
+    - "src/**/*.py"
+    - "docs/**/*.md"
+
+transforms:
+  - type: html_cleaner
+  - type: recursive_chunker
+    chunk_size: 512
+    chunk_overlap: 64
+  - type: auto_embed
+
+sinks:
+  - type: qdrant
+    collection_name: my-repo
+    url: http://localhost:6333
+    vector_size: 384
+```
+
+```bash
+ragpipe run pipeline.yaml
+```
+
+---
+
+## Embedding Backends
+
+`AutoEmbed` tries each backend in order and uses the first available:
+
+| Priority | Backend | Setup |
+|----------|---------|-------|
+| 1 | **Ollama** (local) | `ollama pull nomic-embed-text` |
+| 2 | **OpenAI** | Set `OPENAI_API_KEY` |
+| 3 | **sentence-transformers** (local) | `pip install ragpipe[local]` |
+
+Or point to any OpenAI-compatible API:
+
+```python
+ragpipe.ingest("./docs", embed=True, embed_base_url="http://localhost:11434/v1", embed_model="nomic-embed-text")
+```
+
+---
+
+## Sources
+
+| Source | Example | Description |
+|--------|---------|-------------|
+| `FileSource` | `FileSource("./docs")` | Local files and directories |
+| `GitSource` | `GitSource("https://github.com/owner/repo")` | Clone git repos |
+| `WebSource` | `WebSource("https://example.com")` | Scrape web pages |
+
+## Transforms
+
+| Transform | Description |
+|-----------|-------------|
+| `RecursiveChunker(chunk_size=512, chunk_overlap=64)` | Split text using hierarchical separators |
+| `FixedSizeChunker(chunk_size=512)` | Split by fixed size |
+| `SemanticChunker(embedding_model=...)` | Split by semantic similarity |
+| `HTMLCleaner()` | Strip HTML to clean text |
+| `PIIRemover()` | Redact emails, phones, SSN, etc. |
+| `AutoEmbed()` | Zero-config embeddings (Ollama → OpenAI → ST) |
+| `EmbeddingTransform(model=..., api_key=...)` | Explicit OpenAI-compatible embeddings |
+
+## Sinks
+
+| Sink | Example |
+|------|---------|
+| `JSONSink(path="./out.json")` | Write to JSON file |
+| `QdrantSink("collection", url="...", vector_size=384)` | Write to Qdrant |
+| `PineconeSink("index", api_key="...", dimension=384)` | Write to Pinecone |
+
+---
+
+## Advanced Pipeline
+
+```python
+import ragpipe
 
 pipeline = (
-    Pipeline()
-    .add_source(GitSource(
-        repo_url="https://github.com/owner/repo",
-        branch="main",
-        file_patterns=["src/**/*.py", "docs/**/*.md"],
+    ragpipe.Pipeline()
+    .add_source(ragpipe.WebSource(
+        urls=["https://docs.example.com"],
+        max_depth=1,
+        allowed_domains=["example.com"],
     ))
-    .add_transform(RecursiveChunker(chunk_size=512, chunk_overlap=64))
-    .add_transform(EmbeddingTransform(
-        model="text-embedding-3-small",
-        api_key="sk-...",
-    ))
-    .add_sink(QdrantSink(
-        collection_name="my-repo",
+    .add_transform(ragpipe.HTMLCleaner())
+    .add_transform(ragpipe.PIIRemover())
+    .add_transform(ragpipe.RecursiveChunker(chunk_size=1024, chunk_overlap=128))
+    .add_transform(ragpipe.AutoEmbed())
+    .add_sink(ragpipe.QdrantSink(
+        collection_name="example-docs",
         url="http://localhost:6333",
-        vector_size=1536,
+        vector_size=384,
     ))
 )
 
 stats = pipeline.run()
-print(stats)  # {'extracted': 47, 'transformed': 312, 'written': 312}
-```
-
-### Scrape a website and save to JSON
-
-```python
-from ragpipe import Pipeline, WebSource, HTMLCleaner, RecursiveChunker, JSONSink
-
-pipeline = (
-    Pipeline()
-    .add_source(WebSource(
-        urls=["https://example.com/docs"],
-        max_depth=1,
-    ))
-    .add_transform(HTMLCleaner())
-    .add_transform(RecursiveChunker(chunk_size=1024))
-    .add_sink(JSONSink(output_path="./output.json", append=True))
-)
-
-pipeline.run()
-```
-
-### Ingest local files with PII removal
-
-```python
-from ragpipe import Pipeline, FileSource, PIIRemover, RecursiveChunker, JSONSink
-
-pipeline = (
-    Pipeline()
-    .add_source(FileSource(
-        paths=["./documents/"],
-        file_extensions=[".pdf", ".txt", ".md"],
-        recursive=True,
-    ))
-    .add_transform(PIIRemover())
-    .add_transform(RecursiveChunker(chunk_size=256))
-    .add_sink(JSONSink(output_path="./cleaned_chunks.json"))
-)
-
-pipeline.run()
-```
-
-### Semantic chunking
-
-```python
-from ragpipe import Pipeline, FileSource, SemanticChunker, QdrantSink
-
-pipeline = (
-    Pipeline()
-    .add_source(FileSource(paths=["./long_document.txt"]))
-    .add_transform(SemanticChunker(
-        min_chunk_size=100,
-        max_chunk_size=1000,
-        embedding_model="text-embedding-3-small",
-        api_key="sk-...",
-    ))
-    .add_sink(QdrantSink(collection_name="docs", vector_size=1536))
-)
-
-pipeline.run()
+# {'extracted': 47, 'transformed': 312, 'written': 312}
 ```
 
 ### Dry run (preview without writing)
 
 ```python
-from ragpipe import Pipeline, GitSource, RecursiveChunker
-
-pipeline = (
-    Pipeline()
-    .add_source(GitSource(repo_url="https://github.com/owner/repo"))
-    .add_transform(RecursiveChunker(chunk_size=256))
-)
-
 docs = pipeline.dry_run()
 for doc in docs:
-    print(f"[{doc.metadata['path']}] ({doc.char_count} chars)")
-    print(doc.content[:100] + "...")
+    print(f"[{doc.metadata.get('path', '?')}] {doc.char_count} chars")
 ```
 
-## API Reference
+---
 
-### Sources
+## Why RAGPipe?
 
-| Source | Description |
-|--------|-------------|
-| `GitSource(repo_url, branch, file_patterns, token, shallow)` | Clone a git repo and extract text files |
-| `FileSource(paths, recursive, file_extensions)` | Read local files and directories |
-| `WebSource(urls, max_depth, allowed_domains)` | Scrape web pages with optional crawling |
+- **3 functions.** `ingest()`, `query()`, `pipe()`. That's the whole API.
+- **Zero config.** Auto-detects files, auto-embeds with whatever you have installed.
+- **YAML pipelines.** Declarative configs like `docker-compose` for RAG.
+- **Beautiful CLI.** Rich progress bars, tables, and status spinners.
+- **Any source.** Files, git repos, web pages — one interface.
+- **Any vector DB.** Qdrant, Pinecone, or just a JSON file.
+- **Local-first.** Works with Ollama and sentence-transformers. No API keys needed.
+- **Typed.** Full type annotations, mypy-friendly.
 
-### Transforms
-
-| Transform | Description |
-|-----------|-------------|
-| `RecursiveChunker(chunk_size, chunk_overlap)` | Split text using hierarchical separators |
-| `FixedSizeChunker(chunk_size, chunk_overlap, separator)` | Split by fixed token/char count |
-| `SemanticChunker(min_chunk_size, max_chunk_size, embedding_model)` | Split by semantic similarity of sentences |
-| `HTMLCleaner(remove_tags, strip_attributes)` | Strip HTML to clean text |
-| `PIIRemover(patterns, redact_char)` | Detect and redact PII (email, phone, SSN, etc.) |
-| `EmbeddingTransform(model, api_key, base_url)` | Generate embeddings via OpenAI-compatible API |
-
-### Sinks
-
-| Sink | Description |
-|------|-------------|
-| `JSONSink(output_path, append, include_embeddings)` | Write documents to a JSON file |
-| `QdrantSink(collection_name, url, vector_size)` | Write to Qdrant vector database |
-| `PineconeSink(index_name, api_key, dimension)` | Write to Pinecone vector database |
-
-### Document
-
-Every document flowing through the pipeline is a `Document`:
-
-```python
-@dataclass
-class Document:
-    content: str
-    metadata: dict[str, Any]
-    embedding: list[float] | None
-    id: str  # auto-generated SHA-256 hash
-```
-
-## Pipeline
-
-```python
-pipeline = Pipeline()
-pipeline.add_source(source)
-pipeline.add_transform(transform)
-pipeline.add_sink(sink)
-
-stats = pipeline.run()       # Execute and write to sinks
-docs = pipeline.dry_run()    # Preview without writing
-```
-
-Returns `{"extracted": N, "transformed": N, "written": N}`.
-
-## Configuration
-
-### Embedding providers
-
-`EmbeddingTransform` and `SemanticChunker` support any OpenAI-compatible API:
-
-```python
-# OpenAI
-EmbeddingTransform(model="text-embedding-3-small", api_key="sk-...")
-
-# Ollama (local)
-EmbeddingTransform(model="nomic-embed-text", base_url="http://localhost:11434/v1")
-
-# Any OpenAI-compatible endpoint
-EmbeddingTransform(
-    model="bge-large-en",
-    api_key="...",
-    base_url="https://your-endpoint/v1",
-)
-```
-
-### Qdrant
-
-```python
-QdrantSink(
-    collection_name="my-data",
-    url="http://localhost:6333",        # or cloud URL
-    api_key="...",                       # optional, for cloud
-    vector_size=1536,
-    distance="cosine",                   # cosine, euclidean, dot
-)
-```
-
-### Pinecone
-
-```python
-PineconeSink(
-    index_name="my-data",
-    api_key="...",
-    dimension=1536,
-    metric="cosine",
-    create_index=True,                  # auto-create if missing
-)
-```
+---
 
 ## License
 
-This project uses the **Business Source License 1.1 (BSL 1.1)**. See [LICENSE](./LICENSE) for full terms.
+Business Source License 1.1 (BSL 1.1). **Non-competing use is Apache 2.0.** See [LICENSE](./LICENSE).
 
-**Non-competing use is licensed under Apache 2.0.** If you are not using RAGPipe to compete with avasis-ai's products or services, you may use it under the Apache 2.0 license.
+---
+
+<div align="center">
+
+Built by [avasis-ai](https://github.com/avasis-ai)
+
+</div>

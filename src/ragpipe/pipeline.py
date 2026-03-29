@@ -1,29 +1,40 @@
 from __future__ import annotations
 
-import hashlib
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime
+from pathlib import Path
 from typing import Any, Generator, Protocol, runtime_checkable
 
 logger = logging.getLogger("ragpipe")
 
 
-@dataclass
 class Document:
-    content: str
-    metadata: dict[str, Any] = field(default_factory=dict)
-    embedding: list[float] | None = field(default=None, repr=False)
-    id: str = ""
+    __slots__ = ("content", "metadata", "embedding", "id", "_char_count")
 
-    def __post_init__(self):
-        if not self.id:
-            raw = f"{self.content[:1024]}:{self.metadata}"
+    def __init__(
+        self,
+        content: str,
+        metadata: dict[str, Any] | None = None,
+        embedding: list[float] | None = None,
+        id: str = "",
+    ):
+        self.content = content
+        self.metadata = metadata if metadata is not None else {}
+        self.embedding = embedding
+        self._char_count = len(content)
+
+        if not id:
+            import hashlib
+
+            raw = f"{content[:512]}:{sorted(self.metadata.items())}"
             self.id = hashlib.sha256(raw.encode()).hexdigest()[:16]
 
     @property
     def char_count(self) -> int:
-        return len(self.content)
+        return self._char_count
+
+    def __repr__(self) -> str:
+        preview = self.content[:50].replace("\n", " ")
+        return f"Document(id={self.id!r}, chars={self._char_count}, preview={preview!r}...)"
 
 
 @runtime_checkable
@@ -49,76 +60,56 @@ class Pipeline:
         sinks: list[Sink] | None = None,
     ):
         self.source = source
-        self.transforms = transforms or []
-        self.sinks = sinks or []
-        self._stats: dict[str, int] = {
-            "extracted": 0,
-            "transformed": 0,
-            "written": 0,
-        }
+        self.transforms: list[Transform] = transforms or []
+        self.sinks: list[Sink] = sinks or []
 
-    def add_source(self, source: Source) -> "Pipeline":
+    def add_source(self, source: Source) -> Pipeline:
         self.source = source
         return self
 
-    def add_transform(self, transform: Transform) -> "Pipeline":
+    def add_transform(self, transform: Transform) -> Pipeline:
         self.transforms.append(transform)
         return self
 
-    def add_sink(self, sink: Sink) -> "Pipeline":
+    def add_sink(self, sink: Sink) -> Pipeline:
         self.sinks.append(sink)
         return self
 
     def run(self) -> dict[str, int]:
         if not self.source:
-            raise ValueError("Pipeline requires at least one Source")
+            raise ValueError("Pipeline requires a Source. Use .add_source() or .pipe()")
 
-        start = datetime.now()
-        logger.info("Pipeline started at %s", start.isoformat())
+        stats = {"extracted": 0, "transformed": 0, "written": 0}
 
         all_docs: list[Document] = []
-
         for doc in self.source.extract():
-            self._stats["extracted"] += 1
-            current: list[Document] = [doc]
-
-            for transform in self.transforms:
+            stats["extracted"] += 1
+            batch: list[Document] = [doc]
+            for t in self.transforms:
                 next_batch: list[Document] = []
-                for d in current:
-                    next_batch.extend(transform.transform(d))
-                current = next_batch
-
-            all_docs.extend(current)
-            self._stats["transformed"] += len(current)
+                for d in batch:
+                    next_batch.extend(t.transform(d))
+                batch = next_batch
+            all_docs.extend(batch)
+            stats["transformed"] += len(batch)
 
         for sink in self.sinks:
-            written = sink.write(all_docs)
-            self._stats["written"] += written
+            stats["written"] += sink.write(all_docs)
 
-        elapsed = (datetime.now() - start).total_seconds()
-        logger.info(
-            "Pipeline finished in %.2fs — extracted=%d, transformed=%d, written=%d",
-            elapsed,
-            self._stats["extracted"],
-            self._stats["transformed"],
-            self._stats["written"],
-        )
-
-        return dict(self._stats)
+        logger.info("Pipeline done: %s", stats)
+        return stats
 
     def dry_run(self) -> list[Document]:
         if not self.source:
-            raise ValueError("Pipeline requires at least one Source")
+            raise ValueError("Pipeline requires a Source")
 
         all_docs: list[Document] = []
-
         for doc in self.source.extract():
-            current: list[Document] = [doc]
-            for transform in self.transforms:
+            batch: list[Document] = [doc]
+            for t in self.transforms:
                 next_batch: list[Document] = []
-                for d in current:
-                    next_batch.extend(transform.transform(d))
-                current = next_batch
-            all_docs.extend(current)
-
+                for d in batch:
+                    next_batch.extend(t.transform(d))
+                batch = next_batch
+            all_docs.extend(batch)
         return all_docs

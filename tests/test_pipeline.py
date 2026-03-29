@@ -68,29 +68,23 @@ def test_pipeline_transform_chain():
 
 def test_pipeline_run_stats():
     class CountingSource:
-        def __init__(self):
-            self.count = 0
-
         def extract(self):
             for i in range(3):
-                self.count += 1
                 yield Document(content=f"doc-{i}")
 
     class PassTransform:
         def transform(self, doc):
             return [doc]
 
-    class CountingSink:
-        def __init__(self):
-            self.written = 0
+    written_docs = []
 
+    class CountingSink:
         def write(self, docs):
-            self.written = len(docs)
+            written_docs.extend(docs)
             return len(docs)
 
-    src = CountingSource()
     sink = CountingSink()
-    p = Pipeline(source=src)
+    p = Pipeline(source=CountingSource())
     p.add_transform(PassTransform())
     p.add_sink(sink)
 
@@ -98,7 +92,7 @@ def test_pipeline_run_stats():
     assert stats["extracted"] == 3
     assert stats["transformed"] == 3
     assert stats["written"] == 3
-    assert sink.written == 3
+    assert len(written_docs) == 3
 
 
 def test_pipeline_multiple_sinks():

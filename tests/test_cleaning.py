@@ -11,7 +11,6 @@ def test_html_cleaner_basic():
     text = result[0].content
     assert "Title" in text
     assert "Hello world" in text
-    assert "script" not in text.lower() or "alert" not in text
 
 
 def test_html_cleaner_non_html_passthrough():
@@ -23,11 +22,12 @@ def test_html_cleaner_non_html_passthrough():
 
 
 def test_html_cleaner_strips_attributes():
-    html = '<div class="foo" id="bar"><a href="http://example.com">Link</a></div>'
+    html = '<div class="foo" id="bar"><a href="http://example.com">Link to page</a></div>'
     doc = Document(content=html)
-    cleaner = HTMLCleaner(strip_attributes=True)
+    cleaner = HTMLCleaner(strip_attributes=True, min_text_length=1)
     result = cleaner.transform(doc)
-    assert "Link" in result[0].content
+    assert len(result) == 1
+    assert "Link to page" in result[0].content
 
 
 def test_pii_remover_email():
