@@ -67,6 +67,8 @@ pipeline.run()
 
 **That's it.** No boilerplate, no frameworks, no config files (unless you want them).
 
+<a href="https://avasis-ai.github.io/ragpipe/demo.html"><img src="https://img.shields.io/badge/try_demo-interactive-orange?style=for-the-badge" alt="Try Demo"></a>
+
 ---
 
 ## CLI
