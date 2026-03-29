@@ -38,6 +38,7 @@ qdrant = ["qdrant-client>=1.7"]
 pinecone = ["pinecone-client>=3.0"]
 openai = ["openai>=1.0"]
 local = ["sentence-transformers>=2.2"]
+watch = ["watchdog>=3.0"]
 all = [
     "ragpipe[cli]",
     "ragpipe[web]",
@@ -45,6 +46,7 @@ all = [
     "ragpipe[pinecone]",
     "ragpipe[openai]",
     "ragpipe[local]",
+    "ragpipe[watch]",
 ]
 dev = [
     "pytest>=7.0",
@@ -63,6 +65,9 @@ Issues = "https://github.com/avasis-ai/ragpipe/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragpipe"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"completions" = "share/bash-completion/completions"
 
 [tool.ruff]
 target-version = "py310"

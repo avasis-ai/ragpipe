@@ -91,6 +91,54 @@ ragpipe query "How does auth work?"
 ragpipe run pipeline.yaml
 ```
 
+### Smart-index any codebase
+
+```bash
+# Auto-detect language, ignore node_modules/.git/etc, chunk and store
+ragpipe index .
+
+# Watch for changes and auto-reindex
+ragpipe watch . --chunk-size 256
+
+# Start a local API server (for VSCode, curl, any tool)
+ragpipe serve --port 7642
+```
+
+### Search with fzf
+
+```bash
+ragpipe search --fzf
+```
+
+### Git hooks — auto-index on every commit
+
+```bash
+ragpipe git hook .              # install
+ragpipe git remove .            # remove
+ragpipe git list .              # list installed
+```
+
+### VSCode integration
+
+```bash
+ragpipe vscode tasks .          # generates .vscode/tasks.json
+ragpipe vscode settings         # generates .vscode/settings.json
+```
+
+### macOS — Spotlight integration
+
+```bash
+ragpipe macos spotlight "python files" --path ~/code
+ragpipe macos index ~/projects/my-app
+```
+
+### Linux — systemd services
+
+```bash
+ragpipe linux service --install     # install as systemd service
+ragpipe linux timer . --daily        # auto-index on schedule
+```
+
 ### With embeddings (auto-detects Ollama → OpenAI → sentence-transformers)
 
 ```bash
