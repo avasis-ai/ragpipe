@@ -72,9 +72,13 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            self._data = data
-            self._chunks = data.get("chunks", [])
-            return data
+            if isinstance(data, list):
+                self._chunks = data
+                self._data = {"chunks": data}
+            else:
+                self._data = data
+                self._chunks = data.get("chunks", [])
+            return self._data
         except FileNotFoundError:
             logger.error("Data file not found: %s", self.data_path)
             return {"error": f"Data file not found: {self.data_path}"}
