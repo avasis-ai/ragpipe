@@ -80,7 +80,7 @@ pipeline.run()
 
 **That's it.** No boilerplate, no frameworks, no config files (unless you want them).
 
-<img src="https://raw.githubusercontent.com/avasis-ai/ragpipe/main/.github/demo-screenshot.png" alt="RAGPipe Interactive Demo" width="600">
+<img src="https://raw.githubusercontent.com/avasis-ai/ragpipe/main/.github/demo.gif" alt="RAGPipe Interactive Demo" width="480">
 
 <a href="https://avasis-ai.github.io/ragpipe/demo.html"><img src="https://img.shields.io/badge/try_demo-interactive-orange?style=for-the-badge" alt="Try Demo"></a>
 
