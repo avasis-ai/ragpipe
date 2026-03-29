@@ -265,6 +265,85 @@ for doc in docs:
 
 ---
 
+## Comparison
+
+How does RAGPipe compare to the existing tools?
+
+### Quickstart — side by side
+
+**LangChain** (~40 lines, 5 packages):
+```python
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.vectorstores import InMemoryVectorStore
+
+loader = WebBaseLoader(web_paths=("https://example.com",))
+docs = loader.load()
+splits = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_documents(docs)
+vector_store = InMemoryVectorStore(OpenAIEmbeddings())
+vector_store.add_documents(documents=splits)
+# ... then wire up a retriever + LLM chain
+```
+
+**LlamaIndex** (~5 lines, 2 packages):
+```python
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+
+docs = SimpleDirectoryReader("data").load_data()
+index = VectorStoreIndex.from_documents(docs)
+response = index.as_query_engine().query("What is task decomposition?")
+```
+
+**RAGPipe** (3 lines, 1 package, zero config):
+```bash
+ragpipe index ./docs
+ragpipe query "What is task decomposition?"
+```
+
+Or in Python:
+```python
+import ragpipe
+ragpipe.ingest("./docs")
+results = ragpipe.query("What is task decomposition?")
+```
+
+### Feature comparison
+
+| | **RAGPipe** | **LangChain** | **LlamaIndex** | **Chroma** | **Unstructured** |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Basic RAG in 3 lines | **CLI + Python** | 40 LOC | 5 LOC | N/A | N/A |
+| Packages to install | **1** | 5+ | 2-3 | 1 | 1-2 |
+| CLI | **Built-in** | Separate | Separate | Built-in | No |
+| YAML config pipelines | **Built-in** | No | No | No | No |
+| Smart project indexing | **Built-in** | No | No | No | No |
+| Git hooks | **Built-in** | No | No | No | No |
+| VSCode tasks | **Built-in** | No | No | No | No |
+| fzf integration | **Built-in** | No | No | No | No |
+| systemd service | **Built-in** | No | No | No | No |
+| REST API server | **Built-in** | Separate | No | Built-in | No |
+| Document loaders | Common formats | 160+ | 300+ | N/A | 15+, best PDF |
+| Vector stores | 3 (configurable) | 40+ | 40+ | IS the store | N/A |
+| Agent framework | No | LangGraph | Agents | No | No |
+| Local-first (no API key) | **Yes** | No | Partial | Yes | No |
+
+### Where we're different
+
+RAGPipe isn't trying to be LangChain. It's **ops-native RAG infrastructure** — the `docker-compose` of RAG pipelines.
+
+- **LangChain/LlamaIndex** are frameworks with 100+ integrations. They're great if you need an obscure vector store or multi-agent orchestration. They require 5+ packages and 40+ lines for basic RAG.
+- **Chroma** is a vector database. It stores embeddings. That's it.
+- **Unstructured** is a document preprocessor. It parses PDFs. That's it.
+- **RAGPipe** is the glue. You point it at data, it handles the rest — with a CLI, git hooks, systemd, VSCode, and fzf baked in.
+
+### Where competitors win
+
+- **Ecosystem breadth** — LangChain and LlamaIndex have 100+ integrations each. We have 3 vector stores and 3 sources. (We're opinionated, not exhaustive.)
+- **Document parsing** — Unstructured is best-in-class for PDF/OCR. We read text files.
+- **Agent orchestration** — LangGraph handles stateful multi-step agents. We don't do agents.
+
+---
+
 ## Why RAGPipe?
 
 - **3 functions.** `ingest()`, `query()`, `pipe()`. That's the whole API.
