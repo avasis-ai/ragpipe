@@ -512,8 +512,8 @@ macos_app = typer.Typer(name="macos", help="macOS-specific integrations.", no_ar
 app.add_typer(macos_app)
 
 
-@macos_app.command()
-def spotlight_cmd(
+@macos_app.command("spotlight")
+def macos_spotlight(
     query_text: str = typer.Argument(..., help="Spotlight search query"),
     path: str = typer.Option("/", "--path", help="Search scope"),
 ):
