@@ -50,7 +50,6 @@ tailwind.config = {
         "tertiary-container": "#a86516",
         "primary-fixed-dim": "#6cd3f7",
         "on-primary-container": "#fafdff",
-        "tertiary-fixed": "#ffdcbf",
         "surface": "#f7f9fb",
         "on-tertiary-container": "#fffbff",
         "inverse-surface": "#2d3133",
@@ -85,11 +84,7 @@ tailwind.config = {
 .copy-box { transition: all 0.15s ease; }
 .copy-box:active { transform: scale(0.98); }
 @keyframes flow-dash {
-  to { stroke-dashoffset: -24; }
-}
-.connector-line {
-  stroke-dasharray: 8 8;
-  animation: flow-dash 1.5s linear infinite;
+  to { background-position: 0 20px; }
 }
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(12px); }
@@ -119,14 +114,13 @@ tailwind.config = {
 @media (prefers-reduced-motion: reduce) {
   .stage-card:hover { transform: none; }
   .animate-pulse { animation: none; }
-  .connector-line { animation: none; }
 }
 </style>
 </head>
 <body class="bg-surface font-body text-on-surface selection:bg-secondary-container">
 
 <header class="fixed top-0 w-full z-50 glass-nav shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
-  <div class="flex justify-between items-center h-14 px-8 max-w-full mx-auto">
+    <div class="flex justify-between items-center h-14 px-8 lg:pl-[calc(14rem+2rem)] max-w-full mx-auto">
     <div class="flex items-center gap-3">
       <span class="material-symbols-outlined text-[#0891B2] text-xl">bolt</span>
       <div class="text-xl font-bold tracking-tighter text-[#0891B2] font-headline">RAGPipe</div>
@@ -208,7 +202,7 @@ tailwind.config = {
           </button>
         </div>
       </div>
-      <div class="flex justify-center gap-6 mt-6 text-on-surface-variant">
+        <div class="flex justify-center gap-6 mt-6 text-on-surface-variant flex-wrap">
         <div class="text-center">
           <div class="font-headline text-2xl font-bold text-on-surface">2+1</div>
           <div class="font-label text-[9px] uppercase tracking-widest text-outline mt-0.5">Functions + Pipeline</div>
@@ -228,7 +222,7 @@ tailwind.config = {
   </section>
 
   <!-- SEC.02 — Pipeline -->
-  <section id="pipeline" class="py-20 px-8 bg-surface-container-low/40 relative">
+  <section id="pipeline" class="py-24 px-8 bg-surface-container-low/40 relative">
     <div class="max-w-4xl mx-auto">
       <div class="mb-14">
         <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-[0.2em]">SEC.02 — Pipeline Flow</span>
@@ -237,11 +231,9 @@ tailwind.config = {
       </div>
 
       <!-- Connected Pipeline Stack -->
-      <div class="relative">
-        <!-- Animated SVG connector line running through card centers -->
-        <svg class="absolute left-1/2 -translate-x-[0.5px] top-0 bottom-0 w-3 pointer-events-none" preserveAspectRatio="none" viewBox="0 0 4 800">
-          <line x1="2" y1="0" x2="2" y2="800" stroke="#0891B2" stroke-width="1.5" stroke-opacity="0.25" class="connector-line" />
-        </svg>
+      <div class="relative overflow-hidden">
+        <!-- Animated dashed connector line -->
+        <div class="absolute left-1/2 top-0 bottom-0 w-px pointer-events-none" style="background: repeating-linear-gradient(to bottom, rgba(8,145,178,0.25) 0, rgba(8,145,178,0.25) 6px, transparent 6px, transparent 14px); background-size: 1px 20px; animation: flow-dash 1.5s linear infinite;"></div>
 
         <div class="flex flex-col items-center">
           <!-- Stage 1: Extract -->
@@ -280,7 +272,7 @@ tailwind.config = {
           <!-- Stage 2: Chunk -->
           <div id="stage-chunk" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#8B5CF6]">
             <span class="stage-number">02</span>
-            <div class="flex items-start justify-between mb-3">
+            <div class="flex items-start mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
                   <span class="font-label text-[8px] text-[#8B5CF6] uppercase tracking-widest font-bold">02</span>
@@ -317,7 +309,7 @@ tailwind.config = {
           <!-- Stage 3: Embed -->
           <div id="stage-embed" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#F59E0B]">
             <span class="stage-number">03</span>
-            <div class="flex items-start justify-between mb-3">
+            <div class="flex items-start mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
                   <span class="font-label text-[8px] text-[#F59E0B] uppercase tracking-widest font-bold">03</span>
@@ -356,9 +348,9 @@ tailwind.config = {
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">Persist vectors + text + metadata. 3 sink backends.</p>
               </div>
               <div class="flex gap-1.5 flex-shrink-0">
-                <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">Qdrant</span>
-                <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">Pinecone</span>
-                <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">JSON</span>
+                <span class="font-label text-[8px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded">Qdrant</span>
+                <span class="font-label text-[8px] bg-sky-50 text-sky-600 px-1.5 py-0.5 rounded">Pinecone</span>
+                <span class="font-label text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded">JSON</span>
               </div>
             </div>
             <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
@@ -378,7 +370,7 @@ tailwind.config = {
           <!-- Stage 5: Query -->
           <div id="stage-query" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#EF4444]">
             <span class="stage-number">05</span>
-            <div class="flex items-start justify-between mb-3">
+            <div class="flex items-start mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
                   <span class="font-label text-[8px] text-[#EF4444] uppercase tracking-widest font-bold">05</span>
@@ -438,7 +430,7 @@ tailwind.config = {
     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
       <div>
         <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-[0.2em]">SEC.03 — Vector Retrieval</span>
-        <h2 class="text-3xl font-headline font-bold mt-2 mb-5">Embedding Space</h2>
+        <h2 class="text-2xl font-headline font-bold mt-2 mb-5">Embedding Space</h2>
         <p class="text-on-surface-variant leading-relaxed mb-6 text-sm">
           Each document chunk becomes a point in high-dimensional vector space. Chunks about similar topics cluster together geometrically. When you query, RAGPipe finds the nearest points by cosine similarity.
         </p>
@@ -533,7 +525,7 @@ tailwind.config = {
   </section>
 
   <!-- SEC.04 — Code Comparison -->
-  <section id="comparison" class="py-20 px-8 bg-surface-container-low/40">
+  <section id="comparison" class="py-24 px-8 bg-surface-container-low/40">
     <div class="max-w-5xl mx-auto">
       <div class="mb-12 text-center">
         <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-[0.2em]">SEC.04 — Implementation</span>
@@ -616,14 +608,14 @@ tailwind.config = {
   </section>
 
   <!-- SEC.05 — CTA -->
-  <section class="py-24 px-8 flex justify-center relative overflow-hidden">
+  <section id="cta" class="py-24 px-8 flex justify-center relative overflow-hidden">
     <div class="absolute inset-0 bg-[#0f172a]"></div>
     <div class="absolute inset-0 blueprint-grid opacity-[0.06]"></div>
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0891B2]/5 rounded-full blur-3xl"></div>
     <div class="relative z-10 max-w-xl w-full p-10">
-      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0f172a] px-4 font-label text-[9px] text-[#0891B2] uppercase tracking-[0.3em] border border-[#0891B2]/20 rounded-full">SEC.05 — Execute</div>
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0f172a] px-4 font-label text-[10px] text-[#0891B2] uppercase tracking-[0.3em] border border-[#0891B2]/20 rounded-full">SEC.05 — Execute</div>
       <div class="text-center">
-        <h2 class="text-3xl font-headline font-bold mb-3 tracking-tight text-white">Ready to Pipeline?</h2>
+        <h2 class="text-2xl font-headline font-bold mb-3 tracking-tight text-white">Ready to Pipeline?</h2>
         <p class="text-white/50 text-sm mb-8">One install. Zero config. Any data source.</p>
         <div class="copy-box inline-flex items-center gap-3 bg-[#1e293b] border border-white/10 rounded-lg px-5 py-3 shadow-lg cursor-pointer mb-8 font-label" onclick="copyText(this, 'pip install ragpipe-ai')">
           <span class="text-green-400/80 text-sm">&gt;</span>
@@ -643,8 +635,9 @@ tailwind.config = {
       </div>
     </div>
   </section>
+</main>
 
-  <footer class="w-full py-8 border-t border-outline-variant/10 bg-surface-container-low/30">
+<footer class="w-full py-8 border-t border-outline-variant/10 bg-surface-container-low/30">
     <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-6xl mx-auto gap-4">
       <div class="font-label text-[9px] uppercase tracking-widest text-outline">
         &copy; 2025 avasis-ai &middot; BSL 1.1 &middot; Apache 2.0 for non-competing use
@@ -656,7 +649,6 @@ tailwind.config = {
       </div>
     </div>
   </footer>
-</main>
 
 <script>
 // Generate heatmap strip for embedding visualization
@@ -674,7 +666,7 @@ vals.forEach(v => {
 });
 
 function copyText(el, text) {
-  navigator.clipboard.writeText(text);
+  if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text); }
   const code = el.querySelector('code');
   if (!code) return;
   const orig = code.textContent;
