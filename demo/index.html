@@ -81,12 +81,45 @@ tailwind.config = {
 }
 .heatmap-cell { display: inline-block; width: 6px; height: 18px; border-radius: 1px; }
 .stage-card { transition: all 0.2s ease; }
-.stage-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,100,124,0.08); border-color: #00647c; }
+.stage-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,100,124,0.08); }
 .copy-box { transition: all 0.15s ease; }
 .copy-box:active { transform: scale(0.98); }
+@keyframes flow-dash {
+  to { stroke-dashoffset: -24; }
+}
+.connector-line {
+  stroke-dasharray: 8 8;
+  animation: flow-dash 1.5s linear infinite;
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sidebar-link { transition: all 0.2s ease; }
+.sidebar-link.active {
+  color: #0891B2 !important;
+  background: rgba(8, 145, 178, 0.06);
+  font-weight: 600;
+}
+.sidebar-link.active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+.stage-number {
+  font-family: 'Space Grotesk', system-ui;
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  opacity: 0.04;
+  pointer-events: none;
+  user-select: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .stage-card:hover { transform: none; }
   .animate-pulse { animation: none; }
+  .connector-line { animation: none; }
 }
 </style>
 </head>
@@ -114,28 +147,28 @@ tailwind.config = {
   <div class="bg-outline-variant/20 h-px w-full"></div>
 </header>
 
-<aside class="fixed left-0 top-14 h-[calc(100vh-56px)] w-56 border-r border-outline-variant/10 bg-surface-container-lowest hidden lg:flex flex-col py-6 gap-1">
+<aside id="sidebar" class="fixed left-0 top-14 h-[calc(100vh-56px)] w-56 border-r border-outline-variant/10 bg-surface-container-lowest hidden lg:flex flex-col py-6 gap-1">
   <div class="px-5 mb-6">
     <h3 class="font-headline font-bold text-on-surface text-sm">Pipeline Stages</h3>
     <p class="font-label text-[9px] text-outline uppercase tracking-widest mt-0.5">Data flow diagram</p>
   </div>
   <div class="flex flex-col gap-0.5 px-2">
-    <a href="#pipeline" class="flex items-center gap-2.5 px-3 py-2 text-[#0891B2] font-semibold bg-primary/5 rounded-r-full text-xs">
+    <a href="#pipeline" data-section="pipeline" class="sidebar-link active flex items-center gap-2.5 px-3 py-2 text-[#0891B2] font-semibold bg-primary/5 rounded-r-full text-xs">
       <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL'1">account_tree</span>Overview
     </a>
-    <a href="#stage-extract" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+    <a href="#stage-extract" data-section="stage-extract" class="sidebar-link flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 rounded-r-full text-xs">
       <span class="material-symbols-outlined text-base">description</span>Extract
     </a>
-    <a href="#stage-chunk" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+    <a href="#stage-chunk" data-section="stage-chunk" class="sidebar-link flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 rounded-r-full text-xs">
       <span class="material-symbols-outlined text-base">content_cut</span>Chunk
     </a>
-    <a href="#stage-embed" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+    <a href="#stage-embed" data-section="stage-embed" class="sidebar-link flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 rounded-r-full text-xs">
       <span class="material-symbols-outlined text-base">hub</span>Embed
     </a>
-    <a href="#stage-store" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+    <a href="#stage-store" data-section="stage-store" class="sidebar-link flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 rounded-r-full text-xs">
       <span class="material-symbols-outlined text-base">storage</span>Store
     </a>
-    <a href="#stage-query" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+    <a href="#stage-query" data-section="stage-query" class="sidebar-link flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 rounded-r-full text-xs">
       <span class="material-symbols-outlined text-base">search</span>Query
     </a>
   </div>
@@ -143,7 +176,7 @@ tailwind.config = {
     <div class="bg-surface-container-low rounded-lg p-3">
       <div class="font-label text-[8px] text-outline uppercase tracking-widest mb-1">Benchmark</div>
       <div class="font-label text-xs font-bold text-on-surface">10,468 <span class="text-outline font-normal">chunks/s</span></div>
-      <div class="font-label text-[9px] text-outline mt-0.5">LangChain repo · 2,267 files</div>
+      <div class="font-label text-[9px] text-outline mt-0.5">LangChain repo &middot; 2,267 files</div>
     </div>
   </div>
 </aside>
@@ -151,7 +184,7 @@ tailwind.config = {
 <main class="lg:ml-56 pt-14">
 
   <!-- SEC.01 — Hero -->
-  <section class="relative min-h-[600px] flex flex-col items-center justify-center px-8 text-center overflow-hidden">
+  <section id="hero" class="relative min-h-[600px] flex flex-col items-center justify-center px-8 text-center overflow-hidden">
     <div class="absolute inset-0 blueprint-grid opacity-[0.04] pointer-events-none"></div>
     <div class="absolute top-8 left-8 font-label text-[9px] text-outline/40 uppercase tracking-[0.3em] hidden lg:block">SEC.01 — Overview</div>
     <div class="absolute top-8 right-8 font-label text-[9px] text-outline/40 uppercase tracking-[0.3em] hidden lg:block">RAGPipe Technical Blueprint</div>
@@ -205,17 +238,20 @@ tailwind.config = {
 
       <!-- Connected Pipeline Stack -->
       <div class="relative">
-        <!-- Vertical connector line running through card centers -->
-        <div class="absolute left-1/2 -translate-x-[0.5px] top-0 bottom-0 w-px bg-gradient-to-b from-[#0891B2]/20 via-[#0891B2]/15 to-[#0891B2]/10 pointer-events-none"></div>
+        <!-- Animated SVG connector line running through card centers -->
+        <svg class="absolute left-1/2 -translate-x-[0.5px] top-0 bottom-0 w-3 pointer-events-none" preserveAspectRatio="none" viewBox="0 0 4 800">
+          <line x1="2" y1="0" x2="2" y2="800" stroke="#0891B2" stroke-width="1.5" stroke-opacity="0.25" class="connector-line" />
+        </svg>
 
         <div class="flex flex-col items-center">
           <!-- Stage 1: Extract -->
-          <div id="stage-extract" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#0891B2]">
+          <div id="stage-extract" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#0EA5E9]">
+            <span class="stage-number">01</span>
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-label text-[8px] text-outline uppercase tracking-widest">01</span>
-                  <span class="material-symbols-outlined text-[#0891B2] text-base">description</span>
+                  <span class="font-label text-[8px] text-[#0EA5E9] uppercase tracking-widest font-bold">01</span>
+                  <span class="material-symbols-outlined text-[#0EA5E9] text-base">description</span>
                   <h4 class="font-headline text-sm font-bold">Extract</h4>
                 </div>
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">Read raw text from files, git repos, or web pages. 3 source types.</p>
@@ -228,7 +264,7 @@ tailwind.config = {
               </div>
             </div>
             <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-              FileSource("./docs") &nbsp;·&nbsp; GitSource("https://...") &nbsp;·&nbsp; WebSource("https://...")
+              FileSource("./docs") &middot; GitSource("https://...") &middot; WebSource("https://...")
             </div>
           </div>
 
@@ -236,18 +272,19 @@ tailwind.config = {
           <div class="relative z-10 flex flex-col items-center py-2">
             <div class="w-px h-5 bg-[#0891B2]/25"></div>
             <div class="w-8 h-8 rounded-full bg-surface-container-lowest border-2 border-[#0891B2]/25 flex items-center justify-center">
-              <span class="material-symbols-outlined text-[#089B2] text-lg">arrow_downward</span>
+              <span class="material-symbols-outlined text-[#0891B2] text-lg">arrow_downward</span>
             </div>
-            <div class="w-px h-5 bg-[#089B2]/25"></div>
+            <div class="w-px h-5 bg-[#0891B2]/25"></div>
           </div>
 
           <!-- Stage 2: Chunk -->
-          <div id="stage-chunk" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#089B2]/70">
+          <div id="stage-chunk" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#8B5CF6]">
+            <span class="stage-number">02</span>
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-label text-[8px] text-outline uppercase tracking-widest">02</span>
-                  <span class="material-symbols-outlined text-[#089B2]/70 text-base">content_cut</span>
+                  <span class="font-label text-[8px] text-[#8B5CF6] uppercase tracking-widest font-bold">02</span>
+                  <span class="material-symbols-outlined text-[#8B5CF6] text-base">content_cut</span>
                   <h4 class="font-headline text-sm font-bold">Chunk</h4>
                 </div>
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">Split into 512-char pieces with 64-char overlap. 3 chunking strategies.</p>
@@ -257,12 +294,12 @@ tailwind.config = {
               RecursiveChunker(chunk_size=512, chunk_overlap=64)
             </div>
             <div class="mt-3 flex items-center gap-2">
-              <div class="flex-1 h-3 bg-blue-100 rounded-sm"></div>
+              <div class="flex-1 h-3 bg-purple-100 rounded-sm"></div>
               <span class="material-symbols-outlined text-outline-variant text-xs">arrow_forward</span>
               <div class="flex gap-0.5 flex-1">
-                <div class="h-3 bg-blue-200 rounded-sm w-2/5"></div>
-                <div class="h-3 bg-blue-300/60 rounded-sm w-1/4"></div>
-                <div class="h-3 bg-blue-200 rounded-sm w-1/3"></div>
+                <div class="h-3 bg-purple-200 rounded-sm w-2/5"></div>
+                <div class="h-3 bg-purple-300/60 rounded-sm w-1/4"></div>
+                <div class="h-3 bg-purple-200 rounded-sm w-1/3"></div>
               </div>
             </div>
             <div class="font-label text-[8px] text-outline mt-1 text-center">1 document → 3 overlapping chunks</div>
@@ -272,18 +309,19 @@ tailwind.config = {
           <div class="relative z-10 flex flex-col items-center py-2">
             <div class="w-px h-5 bg-[#0891B2]/25"></div>
             <div class="w-8 h-8 rounded-full bg-surface-container-lowest border-2 border-[#0891B2]/25 flex items-center justify-center">
-              <span class="material-symbols-outlined text-[#089B2]/70 text-lg">arrow_downward</span>
+              <span class="material-symbols-outlined text-[#0891B2] text-lg">arrow_downward</span>
             </div>
             <div class="w-px h-5 bg-[#0891B2]/25"></div>
           </div>
 
           <!-- Stage 3: Embed -->
-          <div id="stage-embed" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#089B2]/70">
+          <div id="stage-embed" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#F59E0B]">
+            <span class="stage-number">03</span>
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-label text-[8px] text-outline uppercase tracking-widest">03</span>
-                  <span class="material-symbols-outlined text-[#089B2]/70 text-base">hub</span>
+                  <span class="font-label text-[8px] text-[#F59E0B] uppercase tracking-widest font-bold">03</span>
+                  <span class="material-symbols-outlined text-[#F59E0B] text-base">hub</span>
                   <h4 class="font-headline text-sm font-bold">Embed</h4>
                 </div>
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">Convert text → float vectors. Dimensions vary by backend: 768 (Ollama), 1536 (OpenAI), 384 (ST).</p>
@@ -299,19 +337,20 @@ tailwind.config = {
           <!-- Arrow -->
           <div class="relative z-10 flex flex-col items-center py-2">
             <div class="w-px h-5 bg-[#0891B2]/25"></div>
-            <div class="w-8 h-8 rounded-full bg-surface-container-lowest border-2 border-[#089B2]/25 flex items-center justify-center">
-              <span class="material-symbols-outlined text-[#089B2]/70 text-lg">arrow_downward</span>
+            <div class="w-8 h-8 rounded-full bg-surface-container-lowest border-2 border-[#0891B2]/25 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[#0891B2] text-lg">arrow_downward</span>
             </div>
-            <div class="w-px h-5 bg-[#089B2]/25"></div>
+            <div class="w-px h-5 bg-[#0891B2]/25"></div>
           </div>
 
           <!-- Stage 4: Store -->
-          <div id="stage-store" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#089B2]/70">
+          <div id="stage-store" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#10B981]">
+            <span class="stage-number">04</span>
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-label text-[8px] text-outline uppercase tracking-widest">04</span>
-                  <span class="material-symbols-outlined text-[#089B2]/70 text-base">storage</span>
+                  <span class="font-label text-[8px] text-[#10B981] uppercase tracking-widest font-bold">04</span>
+                  <span class="material-symbols-outlined text-[#10B981] text-base">storage</span>
                   <h4 class="font-headline text-sm font-bold">Store</h4>
                 </div>
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">Persist vectors + text + metadata. 3 sink backends.</p>
@@ -323,26 +362,27 @@ tailwind.config = {
               </div>
             </div>
             <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-              JSONSink("./index.json") &nbsp;·&nbsp; QdrantSink("collection") &nbsp;·&nbsp; PineconeSink("index")
+              JSONSink("./index.json") &middot; QdrantSink("collection") &middot; PineconeSink("index")
             </div>
           </div>
 
           <!-- Arrow -->
           <div class="relative z-10 flex flex-col items-center py-2">
             <div class="w-px h-5 bg-[#0891B2]/25"></div>
-            <div class="w-8 h-8 rounded-full bg-surface-container-lowest border-2 border-[#089B2]/25 flex items-center justify-center">
-              <span class="material-symbols-outlined text-[#089B2]/50 text-lg">arrow_downward</span>
+            <div class="w-8 h-8 rounded-full bg-surface-container-lowest border-2 border-[#0891B2]/25 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[#0891B2] text-lg">arrow_downward</span>
             </div>
-            <div class="w-px h-5 bg-[#089B2]/25"></div>
+            <div class="w-px h-5 bg-[#0891B2]/25"></div>
           </div>
 
           <!-- Stage 5: Query -->
-          <div id="stage-query" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#089B2]/50">
+          <div id="stage-query" class="stage-card relative bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#EF4444]">
+            <span class="stage-number">05</span>
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-label text-[8px] text-outline uppercase tracking-widest">05</span>
-                  <span class="material-symbols-outlined text-[#089B2]/70 text-base">search</span>
+                  <span class="font-label text-[8px] text-[#EF4444] uppercase tracking-widest font-bold">05</span>
+                  <span class="material-symbols-outlined text-[#EF4444] text-base">search</span>
                   <h4 class="font-headline text-sm font-bold">Query</h4>
                 </div>
                 <p class="text-[11px] text-on-surface-variant leading-relaxed">Embed the query, compute cosine similarity against stored vectors, return top-K matches.</p>
@@ -353,146 +393,12 @@ tailwind.config = {
             </div>
             <div class="mt-3 flex items-center gap-3">
               <span class="font-label text-[9px] text-outline">Top-5 results:</span>
-              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#0891B2]"></div><span class="font-label text-[9px] text-on-surface font-semibold">0.89</span></div>
-              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#089B2]/70"></div><span class="font-label text-[9px] text-on-surface">0.85</span></div>
-              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#089B2]/50"></div><span class="font-label text-[9px] text-on-surface">0.82</span></div>
-              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#089B2]/30"></div><span class="font-label text-[9px] text-outline">0.78</span></div>
-              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#089B2]/20"></div><span class="font-label text-[9px] text-outline">0.74</span></div>
+              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#EF4444]"></div><span class="font-label text-[9px] text-on-surface font-semibold">0.89</span></div>
+              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#EF4444]/70"></div><span class="font-label text-[9px] text-on-surface">0.85</span></div>
+              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#EF4444]/50"></div><span class="font-label text-[9px] text-on-surface">0.82</span></div>
+              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#EF4444]/30"></div><span class="font-label text-[9px] text-outline">0.78</span></div>
+              <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#EF4444]/20"></div><span class="font-label text-[9px] text-outline">0.74</span></div>
             </div>
-          </div>
-      </div>
-              <p class="text-[11px] text-on-surface-variant leading-relaxed">Read raw text from files, git repos, or web pages. 3 source types.</p>
-            </div>
-            <div class="flex gap-1 flex-shrink-0">
-              <span class="font-label text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">.py</span>
-              <span class="font-label text-[8px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">.md</span>
-              <span class="font-label text-[8px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">.html</span>
-              <span class="font-label text-[8px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded">.txt</span>
-            </div>
-          </div>
-          <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-            FileSource("./docs") &nbsp;·&nbsp; GitSource("https://...") &nbsp;·&nbsp; WebSource("https://...")
-          </div>
-        </div>
-
-        <!-- Arrow -->
-        <div class="flex flex-col items-center py-1">
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-          <span class="material-symbols-outlined text-[#0891B2]/40 text-lg">arrow_downward</span>
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-        </div>
-
-        <!-- Stage 2: Chunk -->
-        <div id="stage-chunk" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#0891B2]/70">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-label text-[8px] text-outline uppercase tracking-widest">02</span>
-                <span class="material-symbols-outlined text-[#0891B2]/70 text-base">content_cut</span>
-                <h4 class="font-headline text-sm font-bold">Chunk</h4>
-              </div>
-              <p class="text-[11px] text-on-surface-variant leading-relaxed">Split into 512-char pieces with 64-char overlap. 3 chunking strategies.</p>
-            </div>
-          </div>
-          <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-            RecursiveChunker(chunk_size=512, chunk_overlap=64)
-          </div>
-          <div class="mt-3 flex items-center gap-2">
-            <div class="flex-1 h-3 bg-blue-100 rounded-sm"></div>
-            <span class="material-symbols-outlined text-outline-variant text-xs">arrow_forward</span>
-            <div class="flex gap-0.5 flex-1">
-              <div class="h-3 bg-blue-200 rounded-sm w-2/5"></div>
-              <div class="h-3 bg-blue-300/60 rounded-sm w-1/4"></div>
-              <div class="h-3 bg-blue-200 rounded-sm w-1/3"></div>
-            </div>
-          </div>
-          <div class="font-label text-[8px] text-outline mt-1 text-center">1 document → 3 overlapping chunks</div>
-        </div>
-
-        <!-- Arrow -->
-        <div class="flex flex-col items-center py-1">
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-          <span class="material-symbols-outlined text-[#0891B2]/40 text-lg">arrow_downward</span>
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-        </div>
-
-        <!-- Stage 3: Embed -->
-        <div id="stage-embed" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#0891B2]/70">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-label text-[8px] text-outline uppercase tracking-widest">03</span>
-                <span class="material-symbols-outlined text-[#0891B2]/70 text-base">hub</span>
-                <h4 class="font-headline text-sm font-bold">Embed</h4>
-              </div>
-              <p class="text-[11px] text-on-surface-variant leading-relaxed">Convert text → float vectors. Dimensions vary by backend: 768 (Ollama), 1536 (OpenAI), 384 (ST).</p>
-            </div>
-          </div>
-          <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-            AutoEmbed() <span class="text-outline-variant"># auto-detects Ollama → OpenAI → sentence-transformers</span>
-          </div>
-          <div class="mt-3 flex gap-0.5 items-end justify-center" id="heatmap"></div>
-          <div class="font-label text-[8px] text-outline mt-1.5 text-center">[0.12, -0.34, 0.87, 0.05, -0.62, ...] — each chunk becomes a vector</div>
-        </div>
-
-        <!-- Arrow -->
-        <div class="flex flex-col items-center py-1">
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-          <span class="material-symbols-outlined text-[#0891B2]/40 text-lg">arrow_downward</span>
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-        </div>
-
-        <!-- Stage 4: Store -->
-        <div id="stage-store" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#0891B2]/70">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-label text-[8px] text-outline uppercase tracking-widest">04</span>
-                <span class="material-symbols-outlined text-[#0891B2]/70 text-base">storage</span>
-                <h4 class="font-headline text-sm font-bold">Store</h4>
-              </div>
-              <p class="text-[11px] text-on-surface-variant leading-relaxed">Persist vectors + text + metadata. 3 sink backends.</p>
-            </div>
-            <div class="flex gap-1.5 flex-shrink-0">
-              <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">Qdrant</span>
-              <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">Pinecone</span>
-              <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">JSON</span>
-            </div>
-          </div>
-          <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-            JSONSink("./index.json") &nbsp;·&nbsp; QdrantSink("collection") &nbsp;·&nbsp; PineconeSink("index")
-          </div>
-        </div>
-
-        <!-- Arrow -->
-        <div class="flex flex-col items-center py-1">
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-          <span class="material-symbols-outlined text-[#0891B2]/40 text-lg">arrow_downward</span>
-          <div class="w-px h-4 bg-[#0891B2]/30"></div>
-        </div>
-
-        <!-- Stage 5: Query -->
-        <div id="stage-query" class="stage-card bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-6 w-full max-w-lg border-l-4 border-l-[#0891B2]/50">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-label text-[8px] text-outline uppercase tracking-widest">05</span>
-                <span class="material-symbols-outlined text-[#0891B2]/70 text-base">search</span>
-                <h4 class="font-headline text-sm font-bold">Query</h4>
-              </div>
-              <p class="text-[11px] text-on-surface-variant leading-relaxed">Embed the query, compute cosine similarity against stored vectors, return top-K matches.</p>
-            </div>
-          </div>
-          <div class="bg-surface-container rounded p-2.5 font-label text-[10px] text-on-surface">
-            ragpipe.query("How does auth work?", top_k=5)
-          </div>
-          <div class="mt-3 flex items-center gap-3">
-            <span class="font-label text-[9px] text-outline">Top-5 results:</span>
-            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#0891B2]"></div><span class="font-label text-[9px] text-on-surface font-semibold">0.89</span></div>
-            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#0891B2]/70"></div><span class="font-label text-[9px] text-on-surface">0.85</span></div>
-            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#0891B2]/50"></div><span class="font-label text-[9px] text-on-surface">0.82</span></div>
-            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#0891B2]/30"></div><span class="font-label text-[9px] text-outline">0.78</span></div>
-            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#0891B2]/20"></div><span class="font-label text-[9px] text-outline">0.74</span></div>
           </div>
         </div>
       </div>
@@ -539,7 +445,7 @@ tailwind.config = {
         <div class="bg-surface-container-low border-l-4 border-[#0891B2] p-4 rounded-r-lg mb-6">
           <div class="font-label text-[9px] text-[#0891B2] uppercase tracking-widest mb-1.5">Algorithm: Cosine Similarity</div>
           <div class="font-label text-lg tracking-wider text-on-surface">
-            cos(A,B) = <span class="border-b-2 border-[#0891B2]/30 pb-0.5">A · B</span> / (|A| × |B|)
+            cos(A,B) = <span class="border-b-2 border-[#0891B2]/30 pb-0.5">A &middot; B</span> / (|A| &times; |B|)
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -555,21 +461,21 @@ tailwind.config = {
           </div>
         </div>
       </div>
-      <div class="relative aspect-square bg-surface-container-lowest border border-outline-variant/10 rounded-xl p-8 shadow-sm">
-        <div class="absolute inset-0 blueprint-grid opacity-[0.03] rounded-xl"></div>
-        <div class="absolute top-1/4 left-1/4 w-36 h-36 bg-blue-100/50 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-1/4 right-1/3 w-28 h-28 bg-green-100/50 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/2 right-1/4 w-32 h-32 bg-orange-100/50 rounded-full blur-3xl"></div>
-        <div class="relative w-full h-full border-l border-b border-outline-variant/20">
+      <div class="relative aspect-square rounded-xl p-8 shadow-lg border border-[#1e293b]/30 bg-[#0f172a]">
+        <div class="absolute inset-0 blueprint-grid opacity-[0.06] rounded-xl"></div>
+        <div class="absolute top-1/4 left-1/4 w-36 h-36 bg-blue-400/20 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-1/4 right-1/3 w-28 h-28 bg-green-400/20 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 right-1/4 w-32 h-32 bg-orange-400/15 rounded-full blur-3xl"></div>
+        <div class="relative w-full h-full border-l border-b border-white/10">
           <!-- Axis labels -->
-          <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 font-label text-[8px] text-outline">Dimension 1 (t-SNE)</div>
-          <div class="absolute -left-5 top-1/2 -translate-y-1/2 -rotate-90 font-label text-[8px] text-outline">Dimension 2</div>
+          <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 font-label text-[8px] text-white/40">Dimension 1 (t-SNE)</div>
+          <div class="absolute -left-5 top-1/2 -translate-y-1/2 -rotate-90 font-label text-[8px] text-white/40">Dimension 2</div>
           <!-- Legend -->
-          <div class="absolute top-2 right-2 font-label text-[8px] text-outline space-y-1.5">
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-400"></div>Code (.py)</div>
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-green-400"></div>Docs (.md)</div>
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-orange-400"></div>Config (.yaml)</div>
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div>Query</div>
+          <div class="absolute top-2 right-2 font-label text-[8px] text-white/60 space-y-1.5">
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-400"></div><span class="text-white/80">Code (.py)</span></div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-green-400"></div><span class="text-white/80">Docs (.md)</span></div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-white/80">Config (.yaml)</span></div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-white/80">Query</span></div>
           </div>
           <!-- Blue cluster -->
           <div class="absolute top-[18%] left-[12%] w-2 h-2 rounded-full bg-blue-400/70"></div>
@@ -579,39 +485,47 @@ tailwind.config = {
           <div class="absolute top-[20%] left-[30%] w-1.5 h-1.5 rounded-full bg-blue-400/50"></div>
           <div class="absolute top-[32%] left-[22%] w-1.5 h-1.5 rounded-full bg-blue-400/60"></div>
           <div class="absolute top-[25%] left-[18%] w-1.5 h-1.5 rounded-full bg-blue-400/70"></div>
+          <!-- Cluster label: Code -->
+          <div class="absolute top-[10%] left-[14%] font-label text-[8px] text-blue-300/60 uppercase tracking-widest">src/</div>
           <!-- Green cluster -->
           <div class="absolute top-[60%] left-[15%] w-2 h-2 rounded-full bg-green-400/60"></div>
           <div class="absolute top-[65%] left-[22%] w-2 h-2 rounded-full bg-green-400/50"></div>
           <div class="absolute top-[58%] left-[28%] w-2 h-2 rounded-full bg-green-400/70"></div>
           <div class="absolute top-[70%] left-[18%] w-1.5 h-1.5 rounded-full bg-green-400/40"></div>
           <div class="absolute top-[63%] left-[12%] w-1.5 h-1.5 rounded-full bg-green-400/60"></div>
+          <!-- Cluster label: Docs -->
+          <div class="absolute top-[72%] left-[13%] font-label text-[8px] text-green-300/60 uppercase tracking-widest">docs/</div>
           <!-- Orange cluster -->
           <div class="absolute top-[45%] left-[55%] w-2 h-2 rounded-full bg-orange-400/50"></div>
           <div class="absolute top-[50%] left-[60%] w-2 h-2 rounded-full bg-orange-400/60"></div>
           <div class="absolute top-[42%] left-[65%] w-1.5 h-1.5 rounded-full bg-orange-400/40"></div>
           <div class="absolute top-[52%] left-[52%] w-1.5 h-1.5 rounded-full bg-orange-400/70"></div>
+          <!-- Cluster label: Config -->
+          <div class="absolute top-[37%] left-[55%] font-label text-[8px] text-orange-300/60 uppercase tracking-widest">*.yaml</div>
           <!-- Scattered -->
           <div class="absolute top-[40%] left-[38%] w-1.5 h-1.5 rounded-full bg-blue-300/30"></div>
           <div class="absolute top-[75%] left-[45%] w-1.5 h-1.5 rounded-full bg-green-300/30"></div>
           <div class="absolute top-[35%] left-[70%] w-1.5 h-1.5 rounded-full bg-orange-300/30"></div>
           <!-- Query point -->
-          <div class="absolute top-[53%] left-[62%] w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)] z-10"></div>
-          <div class="absolute top-[53%] left-[62%] w-20 h-20 -ml-[36px] -mt-[36px] border border-red-400/25 rounded-full border-dashed"></div>
+          <div class="absolute top-[53%] left-[62%] w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)] z-10"></div>
+          <div class="absolute top-[53%] left-[62%] w-20 h-20 -ml-[36px] -mt-[36px] border border-red-400/30 rounded-full border-dashed"></div>
+          <!-- Query label -->
+          <div class="absolute top-[45%] left-[65%] font-label text-[8px] text-red-400/80">"auth flow?"</div>
           <!-- Match 1 -->
           <div class="absolute top-[56%] left-[72%]">
-            <div class="w-2.5 h-2.5 rounded-full bg-[#0891B2] shadow-[0_0_8px_rgba(8,145,178,0.5)]"></div>
-            <div class="absolute top-3 -left-1 bg-white px-1.5 py-0.5 shadow-sm border border-outline-variant/15 font-label text-[9px] whitespace-nowrap rounded">SIM 0.89</div>
+            <div class="w-2.5 h-2.5 rounded-full bg-[#0891B2] shadow-[0_0_8px_rgba(8,145,178,0.6)]"></div>
+            <div class="absolute top-3 -left-1 bg-[#1e293b] text-[#0891B2] px-1.5 py-0.5 shadow-sm border border-[#0891B2]/20 font-label text-[9px] whitespace-nowrap rounded">SIM 0.89</div>
             <div class="absolute -top-[3px] -left-[3px] w-4 h-4 border border-[#0891B2]/30 rounded-full"></div>
           </div>
           <!-- Match 2 -->
           <div class="absolute top-[48%] left-[56%]">
             <div class="w-2 h-2 rounded-full bg-[#0891B2]/80 shadow-[0_0_6px_rgba(8,145,178,0.4)]"></div>
-            <div class="absolute top-3 -left-1 bg-white px-1.5 py-0.5 shadow-sm border border-outline-variant/15 font-label text-[9px] whitespace-nowrap rounded">SIM 0.85</div>
+            <div class="absolute top-3 -left-1 bg-[#1e293b] text-[#0891B2] px-1.5 py-0.5 shadow-sm border border-[#0891B2]/20 font-label text-[9px] whitespace-nowrap rounded">SIM 0.85</div>
           </div>
           <!-- Match 3 -->
           <div class="absolute top-[60%] left-[58%]">
             <div class="w-2 h-2 rounded-full bg-[#0891B2]/60 shadow-[0_0_6px_rgba(8,145,178,0.3)]"></div>
-            <div class="absolute top-3 -left-1 bg-white px-1.5 py-0.5 shadow-sm border border-outline-variant/15 font-label text-[9px] whitespace-nowrap rounded">SIM 0.82</div>
+            <div class="absolute top-3 -left-1 bg-[#1e293b] text-[#0891B2] px-1.5 py-0.5 shadow-sm border border-[#0891B2]/20 font-label text-[9px] whitespace-nowrap rounded">SIM 0.82</div>
           </div>
         </div>
       </div>
@@ -633,7 +547,7 @@ tailwind.config = {
             <div class="flex items-center gap-2 text-error/70 font-label text-[10px] uppercase tracking-widest font-bold">
               <span class="material-symbols-outlined text-sm">close</span>LangChain
             </div>
-            <span class="font-label text-[9px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">40 lines · 5+ pkgs</span>
+            <span class="font-label text-[9px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">40 lines &middot; 5+ pkgs</span>
           </div>
           <div class="font-label text-[11px] space-y-2.5 opacity-70 leading-relaxed">
             <p><span class="text-blue-600">from</span> langchain_community.document_loaders <span class="text-blue-600">import</span> WebBaseLoader</p>
@@ -656,7 +570,7 @@ tailwind.config = {
             <div class="flex items-center gap-2 text-[#0891B2] font-label text-[10px] uppercase tracking-widest font-bold">
               <span class="material-symbols-outlined text-sm">check_circle</span>RAGPipe
             </div>
-            <span class="font-label text-[9px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full">3 lines · 1 pkg</span>
+            <span class="font-label text-[9px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full">3 lines &middot; 1 pkg</span>
           </div>
           <div class="font-label text-[11px] space-y-2.5 leading-relaxed">
             <p class="text-blue-600"><span class="text-blue-600">import</span> ragpipe</p>
@@ -675,49 +589,54 @@ tailwind.config = {
 
       <!-- Feature table -->
       <div class="mt-12 bg-surface-container-lowest border border-outline-variant/10 rounded-xl overflow-hidden">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-surface-container-low border-b border-outline-variant/10">
-              <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3">Feature</th>
-              <th class="font-label text-[9px] text-[#0891B2] uppercase tracking-widest p-3 text-center">RAGPipe</th>
-              <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-center">LangChain</th>
-              <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-center">LlamaIndex</th>
-            </tr>
-          </thead>
-          <tbody class="font-label text-[11px]">
-            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">Basic RAG</td><td class="p-3 text-center text-[#0891B2] font-semibold">3 lines</td><td class="p-3 text-center text-on-surface-variant">40 lines</td><td class="p-3 text-center text-on-surface-variant">5 lines</td></tr>
-            <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">Packages</td><td class="p-3 text-center text-[#0891B2] font-semibold">1</td><td class="p-3 text-center text-on-surface-variant">5+</td><td class="p-3 text-center text-on-surface-variant">2-3</td></tr>
-            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">CLI</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center text-outline-variant">separate</td><td class="p-3 text-center text-outline-variant">separate</td></tr>
-            <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">YAML pipelines</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
-            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">Git hooks</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
-            <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">Zero-config embed</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center text-outline-variant">partial</td></tr>
-            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">REST API server</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center text-outline-variant">separate</td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
-            <tr><td class="p-3 text-on-surface-variant">Document loaders</td><td class="p-3 text-center text-on-surface-variant">3</td><td class="p-3 text-center text-[#0891B2] font-semibold">160+</td><td class="p-3 text-center text-[#0891B2] font-semibold">300+</td></tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="sticky top-0 z-10">
+              <tr class="bg-surface-container-low border-b border-outline-variant/10">
+                <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-left">Feature</th>
+                <th class="font-label text-[9px] text-white uppercase tracking-widest p-3 text-center bg-[#0891B2]">RAGPipe</th>
+                <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-center">LangChain</th>
+                <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-center">LlamaIndex</th>
+              </tr>
+            </thead>
+            <tbody class="font-label text-[11px]">
+              <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">Basic RAG</td><td class="p-3 text-center font-semibold bg-[#0891B2]/5 text-[#0891B2]">3 lines</td><td class="p-3 text-center text-on-surface-variant">40 lines</td><td class="p-3 text-center text-on-surface-variant">5 lines</td></tr>
+              <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">Packages</td><td class="p-3 text-center font-semibold bg-[#0891B2]/5 text-[#0891B2]">1</td><td class="p-3 text-center text-on-surface-variant">5+</td><td class="p-3 text-center text-on-surface-variant">2-3</td></tr>
+              <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">CLI</td><td class="p-3 text-center bg-[#0891B2]/5"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center text-outline-variant">separate</td><td class="p-3 text-center text-outline-variant">separate</td></tr>
+              <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">YAML pipelines</td><td class="p-3 text-center bg-[#0891B2]/5"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
+              <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">Git hooks</td><td class="p-3 text-center bg-[#0891B2]/5"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
+              <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">Zero-config embed</td><td class="p-3 text-center bg-[#0891B2]/5"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center text-outline-variant">partial</td></tr>
+              <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">REST API server</td><td class="p-3 text-center bg-[#0891B2]/5"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center text-outline-variant">separate</td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
+              <tr><td class="p-3 text-on-surface-variant">Document loaders</td><td class="p-3 text-center bg-[#0891B2]/5 text-on-surface-variant">3</td><td class="p-3 text-center text-[#0891B2] font-semibold">160+</td><td class="p-3 text-center text-[#0891B2] font-semibold">300+</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- SEC.05 — CTA -->
-  <section class="py-24 px-8 flex justify-center">
-    <div class="max-w-xl w-full border-2 border-dashed border-outline-variant/25 p-10 relative">
-      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-surface px-4 font-label text-[9px] text-[#0891B2] uppercase tracking-[0.3em]">SEC.05 — Execute</div>
+  <section class="py-24 px-8 flex justify-center relative overflow-hidden">
+    <div class="absolute inset-0 bg-[#0f172a]"></div>
+    <div class="absolute inset-0 blueprint-grid opacity-[0.06]"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0891B2]/5 rounded-full blur-3xl"></div>
+    <div class="relative z-10 max-w-xl w-full p-10">
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0f172a] px-4 font-label text-[9px] text-[#0891B2] uppercase tracking-[0.3em] border border-[#0891B2]/20 rounded-full">SEC.05 — Execute</div>
       <div class="text-center">
-        <h2 class="text-3xl font-headline font-bold mb-3 tracking-tight">Ready to Pipeline?</h2>
-        <p class="text-on-surface-variant text-sm mb-8">One install. Zero config. Any data source.</p>
-        <div class="copy-box inline-flex items-center gap-3 bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-5 py-3 shadow-sm cursor-pointer mb-8" onclick="copyText(this, 'pip install ragpipe-ai')">
-          <span class="material-symbols-outlined text-[#0891B2] text-lg">$</span>
-          <code class="font-label text-sm text-on-surface select-all">pip install ragpipe-ai</code>
-          <button class="text-outline-variant hover:text-[#0891B2] transition-colors" onclick="event.stopPropagation(); copyText(this.parentElement, 'pip install ragpipe-ai')">
+        <h2 class="text-3xl font-headline font-bold mb-3 tracking-tight text-white">Ready to Pipeline?</h2>
+        <p class="text-white/50 text-sm mb-8">One install. Zero config. Any data source.</p>
+        <div class="copy-box inline-flex items-center gap-3 bg-[#1e293b] border border-white/10 rounded-lg px-5 py-3 shadow-lg cursor-pointer mb-8 font-label" onclick="copyText(this, 'pip install ragpipe-ai')">
+          <span class="text-green-400/80 text-sm">&gt;</span>
+          <code class="text-sm text-green-400 select-all">pip install ragpipe-ai</code>
+          <button class="text-white/30 hover:text-[#0891B2] transition-colors ml-2" onclick="event.stopPropagation(); copyText(this.parentElement, 'pip install ragpipe-ai')">
             <span class="material-symbols-outlined text-base">content_copy</span>
           </button>
         </div>
         <div class="flex justify-center gap-4 flex-wrap">
-          <a href="https://github.com/avasis-ai/ragpipe" target="_blank" class="flex items-center gap-2 bg-[#00647c] text-white font-label text-[10px] px-5 py-2.5 rounded-lg uppercase tracking-widest hover:bg-[#007f9d] transition-colors">
+          <a href="https://github.com/avasis-ai/ragpipe" target="_blank" class="flex items-center gap-2 bg-[#0891B2] text-white font-label text-[10px] px-5 py-2.5 rounded-lg uppercase tracking-widest hover:bg-[#0EA5E9] transition-colors">
             <span class="material-symbols-outlined text-sm">code</span>GitHub
           </a>
-          <a href="https://pypi.org/project/ragpipe-ai/" target="_blank" class="flex items-center gap-2 border border-outline-variant text-on-surface font-label text-[10px] px-5 py-2.5 rounded-lg uppercase tracking-widest hover:bg-surface-container-low transition-colors">
+          <a href="https://pypi.org/project/ragpipe-ai/" target="_blank" class="flex items-center gap-2 border border-white/15 text-white/80 font-label text-[10px] px-5 py-2.5 rounded-lg uppercase tracking-widest hover:bg-white/5 transition-colors">
             <span class="material-symbols-outlined text-sm">inventory_2</span>PyPI
           </a>
         </div>
@@ -756,11 +675,13 @@ vals.forEach(v => {
 
 function copyText(el, text) {
   navigator.clipboard.writeText(text);
-  const orig = el.querySelector('code').textContent;
-  el.querySelector('code').textContent = 'Copied!';
-  el.style.borderColor = '#22C55E';
+  const code = el.querySelector('code');
+  if (!code) return;
+  const orig = code.textContent;
+  code.textContent = 'Copied!';
+  if (el.style.borderColor !== undefined) el.style.borderColor = '#22C55E';
   setTimeout(() => {
-    el.querySelector('code').textContent = orig;
+    code.textContent = orig;
     el.style.borderColor = '';
   }, 1200);
 }
@@ -772,6 +693,36 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     const target = document.querySelector(a.getAttribute('href'));
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+});
+
+// Sticky sidebar active state via IntersectionObserver
+const sections = ['pipeline', 'stage-extract', 'stage-chunk', 'stage-embed', 'stage-store', 'stage-query'];
+const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      sidebarLinks.forEach(link => {
+        link.classList.remove('active');
+        link.classList.remove('bg-primary/5');
+        link.classList.remove('font-semibold');
+        link.classList.add('text-on-surface-variant');
+      });
+      const active = document.querySelector(`.sidebar-link[data-section="${id}"]`);
+      if (active) {
+        active.classList.add('active');
+      }
+    }
+  });
+}, {
+  rootMargin: '-20% 0px -60% 0px',
+  threshold: 0
+});
+
+sections.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) observer.observe(el);
 });
 </script>
 </body>
