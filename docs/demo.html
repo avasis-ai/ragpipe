@@ -1,555 +1,583 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAGPipe — How RAG Works</title>
-<meta name="description" content="Interactive demo: watch how RAGPipe converts raw documents into searchable vector embeddings in real time.">
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>RAGPipe | Technical Blueprint</title>
+<meta name="description" content="Interactive technical blueprint: how RAGPipe converts raw documents into searchable vector embeddings.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#09090B;--bg2:#111113;--bg3:#18181B;--bg4:#1F1F23;
-  --border:#27272A;--border2:#3F3F46;
-  --text:#FAFAFA;--text2:#A1A1AA;--text3:#71717A;
-  --accent:#7C3AED;--accent-glow:#A78BFA;--accent-dim:#6D28D9;
-  --green:#22C55E;--amber:#F59E0B;--cyan:#06B6D4;--red:#EF4444;
-  --font-display:'Space Grotesk',system-ui,sans-serif;
-  --font-body:'DM Sans',system-ui,sans-serif;
-  --font-mono:'JetBrains Mono',monospace;
-  --max-w:1100px;
-  --radius:12px;
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container": "#eceef0",
+        "on-primary": "#ffffff",
+        "surface-tint": "#006780",
+        "on-primary-fixed-variant": "#004e61",
+        "inverse-on-surface": "#eff1f3",
+        "surface-container-high": "#e6e8ea",
+        "on-secondary": "#ffffff",
+        "background": "#f7f9fb",
+        "primary-container": "#007f9d",
+        "tertiary-fixed": "#ffdcbf",
+        "outline-variant": "#bdc8ce",
+        "primary": "#00647c",
+        "on-secondary-container": "#466977",
+        "surface-dim": "#d8dadc",
+        "on-surface-variant": "#3e484d",
+        "inverse-primary": "#6cd3f7",
+        "on-primary-fixed": "#001f28",
+        "tertiary": "#894e00",
+        "surface-variant": "#e0e3e5",
+        "on-error-container": "#93000a",
+        "error": "#ba1a1a",
+        "on-error": "#ffffff",
+        "primary-fixed": "#b7eaff",
+        "surface-container-low": "#f2f4f6",
+        "on-tertiary-fixed-variant": "#6a3b00",
+        "surface-container-lowest": "#ffffff",
+        "tertiary-fixed-dim": "#ffb873",
+        "secondary": "#406370",
+        "surface-bright": "#f7f9fb",
+        "on-secondary-fixed-variant": "#284b58",
+        "tertiary-container": "#a86516",
+        "primary-fixed-dim": "#6cd3f7",
+        "on-primary-container": "#fafdff",
+        "tertiary-fixed": "#ffdcbf",
+        "surface": "#f7f9fb",
+        "on-tertiary-container": "#fffbff",
+        "inverse-surface": "#2d3133",
+        "outline": "#6e797e",
+        "error-container": "#ffdad6",
+        "on-surface": "#191c1e"
+      },
+      fontFamily: {
+        "headline": ["Space Grotesk", "system-ui", "sans-serif"],
+        "body": ["Manrope", "system-ui", "sans-serif"],
+        "label": ["JetBrains Mono", "monospace"]
+      },
+      borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+    },
+  },
 }
-html{scroll-behavior:smooth}
-body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;overflow-x:hidden;
-  background-image:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);
-  background-size:64px 64px}
-h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:1.2}
-code,pre,.mono{font-family:var(--font-mono)}
-
-/* ─── NAV ─── */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:12px 24px;
-  background:rgba(9,9,11,.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
-.nav-logo{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text)}
-.nav-logo span{background:linear-gradient(135deg,#7C3AED,#06B6D4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-links{display:flex;gap:24px}
-.nav-links a{color:var(--text3);font-size:13px;font-weight:500;text-decoration:none;transition:color .2s ease}
-.nav-links a:hover{color:var(--text)}
-
-/* ─── HERO ─── */
-.hero{padding:100px 24px 40px;text-align:center;position:relative}
-.hero h1{font-size:clamp(36px,6vw,56px);font-weight:700;
-  background:linear-gradient(135deg,#7C3AED 0%,#A78BFA 40%,#06B6D4 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
-.hero p{color:var(--text2);font-size:18px;max-width:480px;margin:0 auto 32px}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;
-  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  font-family:var(--font-mono);font-size:13px;color:var(--cyan)}
-.hero-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 2s ease-in-out infinite}
-@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:10px 20px;
-  background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(6,182,212,.08));
-  border:1px solid rgba(124,58,237,.2);border-radius:100px;
-  font-size:13px;color:var(--text2);text-decoration:none;cursor:pointer;transition:all .2s ease}
-.hero-badge:hover{border-color:var(--accent);background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(6,182,212,.12));transform:translateY(-2px)}
-.hero-badge svg{width:14px;height:14px;color:var(--green)}
-
-/* ─── CONTAINER ─── */
-.container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
-
-/* ─── STEP INDICATOR ─── */
-.steps{display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 40px}
-.step{display:flex;align-items:center;gap:0}
-.step-dot{width:10px;height:10px;border-radius:50%;background:var(--border2);transition:all .3s cubic-bezier(.34,1.56,.64,1)}
-.step-dot.active{background:var(--accent);box-shadow:0 0 14px var(--accent);transform:scale(1.4)}
-.step-dot.done{background:var(--green)}
-.step-line{width:28px;height:2px;background:var(--border2);margin:0 2px;transition:background .3s ease}
-.step-line.done{background:var(--green)}
-
-/* ─── PIPELINE ─── */
-.pipeline{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:32px}
-@media(max-width:700px){.pipeline{grid-template-columns:1fr}}
-
-/* ─── GLASS CARD ─── */
-.glass{background:rgba(17,17,19,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:20px;
-  opacity:0;transform:translateY(16px) scale(.97);
-  transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1),border-color .3s ease,box-shadow .3s ease;
-  position:relative;overflow:hidden}
-.glass.on{opacity:1;transform:translateY(0) scale(1)}
-.glass.done{opacity:1;transform:translateY(0) scale(1);border-color:rgba(34,197,94,.3)}
-.glass.on{border-color:rgba(124,58,237,.3);box-shadow:0 0 40px rgba(124,58,237,.08)}
-
-.stage-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.stage-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;font-family:var(--font-mono);background:var(--bg4);color:var(--text3);
-  transition:all .3s ease}
-.glass.on .stage-num{background:var(--accent);color:#fff;box-shadow:0 0 12px var(--accent)}
-.glass.done .stage-num{background:var(--green);color:#fff}
-.stage-name{font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text2)}
-
-/* ─── INPUT ─── */
-.textarea-input{width:100%;min-height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  padding:14px;color:var(--text);font-family:var(--font-mono);font-size:12px;line-height:1.7;resize:none;
-  outline:none;transition:border-color .2s ease}
-.textarea-input:focus{border-color:var(--accent)}
-.textarea-input::placeholder{color:var(--text3)}
-.sample-btns{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
-.btn{padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);
-  color:var(--text);font-family:var(--font-body);font-size:12px;font-weight:500;cursor:pointer;
-  transition:all .15s ease;white-space:nowrap}
-.btn:hover{border-color:var(--accent);background:var(--bg4);transform:translateY(-1px)}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent-dim)}
-.btn-run{background:linear-gradient(135deg,var(--accent),#06B6D4);border:none;color:#fff;font-weight:600;
-  padding:9px 24px;font-size:13px;gap:6px;display:inline-flex;align-items:center}
-.btn-run:hover{opacity:.9;transform:translateY(-1px)}
-.btn-run:active{transform:scale(.97)}
-
-/* ─── CHUNKS ─── */
-.chunks{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.chunk{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;
-  opacity:0;transform:translateY(8px) scale(.92);overflow:hidden;
-  transition:all .5s cubic-bezier(.34,1.56,.64,1)}
-.chunk.vis{opacity:1;transform:translateY(0) scale(1)}
-.chunk.lit{border-color:rgba(34,197,94,.25);box-shadow:0 0 12px rgba(34,197,94,.08)}
-.chunk-label{font-size:9px;font-weight:700;color:var(--green);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
-.chunk-text{font-size:11px;line-height:1.5;color:var(--text2);font-family:var(--font-mono);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.chunk-meta{font-size:9px;color:var(--text3);margin-top:4px}
-.scan-bar{position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;pointer-events:none}
-.scan-bar.go{opacity:1;animation:scan .8s ease-in-out}
-
-/* ─── EMBEDDINGS ─── */
-.embed-row{display:flex;flex-direction:column;gap:5px}
-.embed-viz{height:32px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;
-  position:relative;overflow:hidden;opacity:0;transform:scaleX(0);transform-origin:left;
-  transition:all .6s cubic-bezier(.16,1,.3,1)}
-.embed-viz.vis{opacity:1;transform:scaleX(1)}
-.bar{position:absolute;bottom:0;width:3px;border-radius:1.5px 1.5px 0 0;transform-origin:bottom;
-  transform:scaleY(0);animation:grow .35s cubic-bezier(.34,1.56,.64,1) forwards}
-@keyframes grow{to{transform:scaleY(1)}}
-
-/* ─── STORE ─── */
-.db-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px}
-.db-body{width:56px;height:44px;border:2px solid var(--border);border-radius:4px 4px 8px 8px;
-  position:relative;overflow:hidden;transition:border-color .3s ease,box-shadow .3s ease;margin-bottom:-1px}
-.db-body.lit{border-color:var(--cyan);box-shadow:0 0 20px rgba(6,182,212,.15)}
-.db-top{width:56px;height:14px;border:2px solid var(--border);border-radius:50%;transition:border-color .3s ease}
-.db-top.lit{border-color:var(--cyan)}
-.db-num{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--cyan);margin-top:12px;
-  font-variant-numeric:tabular-nums}
-.db-label{font-size:11px;color:var(--text3)}
-.dot{position:absolute;width:4px;height:4px;border-radius:50%;opacity:0;
-  animation:dotpop .25s cubic-bezier(.34,1.56,.64,1) forwards}
-@keyframes dotpop{0%{opacity:0;transform:scale(0)}60%{transform:scale(1.3)}100%{opacity:.7;transform:scale(1)}}
-
-/* ─── QUERY ─── */
-.query-box{opacity:0;transform:translateY(16px);transition:all .5s cubic-bezier(.16,1,.3,1);
-  background:rgba(17,17,19,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:24px;margin-bottom:32px}
-.query-box.vis{opacity:1;transform:translateY(0)}
-.query-input{width:100%;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color .2s ease}
-.query-input:focus{border-color:var(--accent)}
-.query-input::placeholder{color:var(--text3)}
-.results{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-.result{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;
-  opacity:0;transform:translateY(8px);animation:resIn .4s cubic-bezier(.16,1,.3,1) forwards}
-.result:nth-child(1){animation-delay:80ms}.result:nth-child(2){animation-delay:200ms}.result:nth-child(3){animation-delay:320ms}
-@keyframes resIn{to{opacity:1;transform:translateY(0)}}
-.result-score{font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px;font-family:var(--font-mono)}
-.result-body{font-size:13px;color:var(--text2);line-height:1.6}
-.result-body mark{background:rgba(124,58,237,.2);color:var(--accent-glow);border-radius:2px;padding:0 2px}
-.result-meta{font-size:11px;color:var(--text3);margin-top:6px}
-
-/* ─── CODE PANEL ─── */
-.code-panel{background:rgba(17,17,19,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:16px 20px;
-  font-family:var(--font-mono);font-size:12px;line-height:2}
-.cl{opacity:.25;transition:opacity .3s ease;white-space:pre}
-.cl.vis{opacity:1}
-.cl .p{color:var(--text3)}.cl .c{color:var(--cyan)}.cl .g{color:var(--green)}.cl .d{color:var(--text3)}
-
-/* ─── FOOTER CTA ─── */
-.cta{text-align:center;padding:48px 24px 80px}
-.cta h2{font-size:24px;margin-bottom:8px}
-.cta p{color:var(--text2);margin-bottom:24px;font-size:15px}
-.cta-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
-.cta-link{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;
-  background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:500;
-  text-decoration:none;transition:all .2s ease}
-.cta-link:hover{border-color:var(--accent);transform:translateY(-1px)}
-.cta-install{display:flex;align-items:center;gap:10px;padding:12px 20px;margin-bottom:24px;
-  background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;
-  font-family:var(--font-mono);font-size:14px;color:var(--text);transition:all .2s ease;
-  user-select:none;position:relative}
-.cta-install:hover{border-color:var(--accent)}
-.cta-install-prompt{color:var(--green);font-weight:600}
-.cta-install-copied{position:absolute;right:16px;color:var(--green);font-size:12px;font-weight:600;
-  opacity:0;transition:opacity .2s ease}
-.cta-install-copied.show{opacity:1}
-
-@keyframes scan{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-@media(max-width:700px){.chunks{grid-template-columns:1fr}.hero h1{font-size:32px}}
+</script>
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.blueprint-grid {
+  background-image: radial-gradient(circle, #00647c 0.8px, transparent 0.8px);
+  background-size: 24px 24px;
+}
+.glass-nav {
+  background: rgba(247, 249, 251, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.heatmap-cell { display: inline-block; width: 6px; height: 18px; border-radius: 1px; }
+.stage-card { transition: all 0.2s ease; }
+.stage-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,100,124,0.08); border-color: #00647c; }
+.copy-box { transition: all 0.15s ease; }
+.copy-box:active { transform: scale(0.98); }
+@media (prefers-reduced-motion: reduce) {
+  .stage-card:hover { transform: none; }
+  .animate-pulse { animation: none; }
+}
 </style>
 </head>
-<body>
+<body class="bg-surface font-body text-on-surface selection:bg-secondary-container">
 
-<nav class="nav">
-  <div class="nav-logo"><span>RAGPipe</span></div>
-  <div class="nav-links">
-    <a href="https://github.com/avasis-ai/ragpipe" target="_blank">GitHub</a>
-    <a href="https://avasis-ai.github.io/ragpipe/">Docs</a>
+<header class="fixed top-0 w-full z-50 glass-nav shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
+  <div class="flex justify-between items-center h-14 px-8 max-w-full mx-auto">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-[#0891B2] text-xl">bolt</span>
+      <div class="text-xl font-bold tracking-tighter text-[#0891B2] font-headline">RAGPipe</div>
+      <span class="font-label text-[9px] text-outline bg-surface-container px-2 py-0.5 rounded-full uppercase tracking-widest">v0.1.0</span>
+    </div>
+    <nav class="hidden md:flex items-center gap-8">
+      <a class="font-label text-[10px] uppercase tracking-widest text-[#0891B2] border-b-2 border-[#0891B2] pb-0.5" href="#pipeline">Pipeline</a>
+      <a class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-[#0891B2] transition-colors" href="#embeddings">Embeddings</a>
+      <a class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-[#0891B2] transition-colors" href="#comparison">Comparison</a>
+      <a class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-[#0891B2] transition-colors" href="https://github.com/avasis-ai/ragpipe" target="_blank">GitHub</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <a href="https://pypi.org/project/ragpipe-ai/" target="_blank" class="hidden sm:flex items-center gap-1.5 font-label text-[10px] text-on-surface-variant hover:text-[#0891B2] transition-colors">
+        <span class="material-symbols-outlined text-sm">inventory_2</span>PyPI
+      </a>
+    </div>
   </div>
-</nav>
-
-<header class="hero">
-  <h1>How RAG works</h1>
-  <p>Watch raw text get chunked, embedded, and stored as vectors — then searched in real time. No API key needed.</p>
-  <a class="hero-tag"><span class="dot"></span> Interactive demo — runs in your browser</a>
-  <br>
-  <a href="https://github.com/avasis-ai/ragpipe" class="hero-badge" target="_blank">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0s8 3.58 8 8-3.58 8-8-3.58-8-8zm3.5 5.5a.5.5 0 1 1-1 1 .5.5 0 0 1 1-1V7a.5.5 0 0 0-1-1V3.5z"/></svg>
-    View on GitHub
-  </a>
+  <div class="bg-outline-variant/20 h-px w-full"></div>
 </header>
 
-<main class="container">
-  <div class="steps" id="steps">
-    <div class="step"><div class="step-dot" data-s="1"></div><div class="step-line" data-s="1"></div></div>
-    <div class="step"><div class="step-dot" data-s="2"></div><div class="step-line" data-s="2"></div></div>
-    <div class="step"><div class="step-dot" data-s="3"></div><div class="step-line" data-s="3"></div></div>
-    <div class="step"><div class="step-dot" data-s="4"></div></div>
+<aside class="fixed left-0 top-14 h-[calc(100vh-56px)] w-56 border-r border-outline-variant/10 bg-surface-container-lowest hidden lg:flex flex-col py-6 gap-1">
+  <div class="px-5 mb-6">
+    <h3 class="font-headline font-bold text-on-surface text-sm">Pipeline Stages</h3>
+    <p class="font-label text-[9px] text-outline uppercase tracking-widest mt-0.5">Data flow diagram</p>
   </div>
+  <div class="flex flex-col gap-0.5 px-2">
+    <a href="#pipeline" class="flex items-center gap-2.5 px-3 py-2 text-[#0891B2] font-semibold bg-primary/5 rounded-r-full text-xs">
+      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL'1">account_tree</span>Overview
+    </a>
+    <a href="#stage-extract" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+      <span class="material-symbols-outlined text-base">description</span>Extract
+    </a>
+    <a href="#stage-chunk" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+      <span class="material-symbols-outlined text-base">content_cut</span>Chunk
+    </a>
+    <a href="#stage-embed" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+      <span class="material-symbols-outlined text-base">hub</span>Embed
+    </a>
+    <a href="#stage-store" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+      <span class="material-symbols-outlined text-base">storage</span>Store
+    </a>
+    <a href="#stage-query" class="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:text-[#0891B2] hover:bg-primary/5 transition-all rounded-r-full text-xs">
+      <span class="material-symbols-outlined text-base">search</span>Query
+    </a>
+  </div>
+  <div class="mt-auto px-4 border-t border-outline-variant/10 pt-4 space-y-2">
+    <div class="bg-surface-container-low rounded-lg p-3">
+      <div class="font-label text-[8px] text-outline uppercase tracking-widest mb-1">Benchmark</div>
+      <div class="font-label text-xs font-bold text-on-surface">10,468 <span class="text-outline font-normal">chunks/s</span></div>
+      <div class="font-label text-[9px] text-outline mt-0.5">LangChain repo · 2,267 files</div>
+    </div>
+  </div>
+</aside>
 
-  <div class="pipeline">
-    <!-- INPUT -->
-    <div class="glass" id="s1">
-      <div class="stage-head"><div class="stage-num">1</div><div class="stage-name">Input</div></div>
-      <textarea class="textarea-input" id="inp" placeholder="Paste any text here, or try a sample below...">RAGPipe is a declarative RAG pipeline library for Python. It supports ingesting data from files, git repositories, and web pages.
+<main class="lg:ml-56 pt-14">
 
-The three main functions are ingest(), query(), and Pipeline(). You can also use the CLI with commands like ragpipe ingest and ragpipe query.
-
-It supports multiple embedding backends including Ollama, OpenAI, and sentence-transformers. It auto-detects the best available backend.
-
-Vector database sinks include Qdrant, Pinecone, and JSON files for local development. The CLI provides rich progress bars, result tables, and status spinners.
-
-Smart indexing auto-detects your project type and ignores the right files. Git hooks auto-index after every commit. VSCode tasks are generated for one-click indexing.</textarea>
-      <div class="sample-btns">
-        <button class="btn-run" onclick="go()">▶ Run Pipeline</button>
-        <button class="btn" onclick="load('code')">Code</button>
-        <button class="btn" onclick="load('docs')">Docs</button>
-        <button class="btn" onclick="load('api')">API</button>
+  <!-- SEC.01 — Hero -->
+  <section class="relative min-h-[600px] flex flex-col items-center justify-center px-8 text-center overflow-hidden">
+    <div class="absolute inset-0 blueprint-grid opacity-[0.04] pointer-events-none"></div>
+    <div class="absolute top-8 left-8 font-label text-[9px] text-outline/40 uppercase tracking-[0.3em] hidden lg:block">SEC.01 — Overview</div>
+    <div class="absolute top-8 right-8 font-label text-[9px] text-outline/40 uppercase tracking-[0.3em] hidden lg:block">RAGPipe Technical Blueprint</div>
+    <div class="relative z-10 space-y-5 max-w-3xl">
+      <div class="inline-flex items-center gap-2 bg-surface-container-low border border-outline-variant/15 rounded-full px-4 py-1.5">
+        <div class="w-1.5 h-1.5 rounded-full bg-[#0891B2]"></div>
+        <span class="font-label text-[10px] text-on-surface-variant uppercase tracking-widest">Retrieval-Augmented Generation</span>
+      </div>
+      <h1 class="text-5xl md:text-6xl font-headline font-bold leading-[0.95] tracking-tighter text-on-surface">
+        How RAG <span class="text-[#0891B2]">Works</span>
+      </h1>
+      <p class="text-lg text-on-surface-variant font-body font-light max-w-lg mx-auto leading-relaxed">
+        A technical walkthrough. Raw documents flow through extraction, chunking, embedding, storage, and retrieval — in 3 lines of code.
+      </p>
+      <div class="mt-8 inline-block">
+        <div class="copy-box bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-5 py-3.5 flex items-center gap-4 shadow-sm cursor-pointer" onclick="copyText(this, 'pip install ragpipe-ai')">
+          <span class="material-symbols-outlined text-[#0891B2] text-lg">$</span>
+          <code class="font-label text-sm text-on-surface select-all">pip install ragpipe-ai</code>
+          <button class="text-outline-variant hover:text-[#0891B2] transition-colors ml-2" onclick="event.stopPropagation(); copyText(this.parentElement, 'pip install ragpipe-ai')">
+            <span class="material-symbols-outlined text-base">content_copy</span>
+          </button>
+        </div>
+      </div>
+      <div class="flex justify-center gap-6 mt-6 text-on-surface-variant">
+        <div class="text-center">
+          <div class="font-headline text-2xl font-bold text-on-surface">3</div>
+          <div class="font-label text-[9px] uppercase tracking-widest text-outline mt-0.5">Functions</div>
+        </div>
+        <div class="w-px bg-outline-variant/20"></div>
+        <div class="text-center">
+          <div class="font-headline text-2xl font-bold text-on-surface">0</div>
+          <div class="font-label text-[9px] uppercase tracking-widest text-outline mt-0.5">Config Needed</div>
+        </div>
+        <div class="w-px bg-outline-variant/20"></div>
+        <div class="text-center">
+          <div class="font-headline text-2xl font-bold text-on-surface">0.71s</div>
+          <div class="font-label text-[9px] uppercase tracking-widest text-outline mt-0.5">For 7K Chunks</div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <!-- CHUNKS -->
-    <div class="glass" id="s2">
-      <div class="stage-head"><div class="stage-num">2</div><div class="stage-name">Chunk</div></div>
-      <div class="chunks" id="chunks"></div>
-      <div id="chunkInfo" style="margin-top:10px;font-size:11px;color:var(--text3)"></div>
-    </div>
+  <!-- SEC.02 — Pipeline -->
+  <section id="pipeline" class="py-20 px-8 bg-surface-container-low/40 relative">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-14">
+        <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-[0.2em]">SEC.02 — Pipeline Flow</span>
+        <h2 class="text-2xl font-headline font-bold mt-2">The Architecture</h2>
+        <p class="text-on-surface-variant text-sm mt-2 max-w-xl">Five stages. Sources pull data in, transforms process it, sinks store the results. A query reverses the flow.</p>
+      </div>
 
-    <!-- EMBED -->
-    <div class="glass" id="s3">
-      <div class="stage-head"><div class="stage-num">3</div><div class="stage-name">Embed</div></div>
-      <div class="embed-row" id="embeds"></div>
-      <div id="embedInfo" style="margin-top:10px;font-size:11px;color:var(--text3)"></div>
-    </div>
+      <div class="relative flex flex-col lg:flex-row justify-between items-stretch gap-4">
+        <div class="absolute top-1/2 left-0 w-full h-px bg-outline-variant/15 hidden lg:block -z-10"></div>
+        <div class="absolute top-0 left-1/2 w-px h-full bg-outline-variant/15 hidden lg:block -z-10"></div>
 
-    <!-- STORE -->
-    <div class="glass" id="s4">
-      <div class="stage-head"><div class="stage-num">4</div><div class="stage-name">Store</div></div>
-      <div class="db-wrap">
-        <div class="db-top" id="dbTop"></div>
-        <div class="db-body" id="dbBody"><div class="scan-bar" id="dbScan"></div></div>
-        <div class="db-num" id="dbNum">0</div>
-        <div class="db-label">vectors stored</div>
+        <!-- Stage 1: Extract -->
+        <div id="stage-extract" class="stage-card bg-surface-container-lowest border border-outline-variant/10 p-5 w-full lg:w-44 flex-shrink-0 border-t-2 border-t-[#0891B2]">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-label text-[8px] text-outline uppercase tracking-widest">01</span>
+            <span class="material-symbols-outlined text-[#0891B2] text-lg">description</span>
+          </div>
+          <h4 class="font-headline text-sm font-bold mb-1">Extract</h4>
+          <p class="text-[11px] text-on-surface-variant leading-relaxed mb-4">Read raw text from files, git repos, or web pages.</p>
+          <div class="bg-surface-container-low rounded p-2.5">
+            <code class="font-label text-[10px] text-on-surface">FileSource("./docs")</code>
+          </div>
+          <div class="flex gap-1 mt-3">
+            <span class="font-label text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">.py</span>
+            <span class="font-label text-[8px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">.md</span>
+            <span class="font-label text-[8px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded">.pdf</span>
+            <span class="font-label text-[8px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">.html</span>
+          </div>
+        </div>
+
+        <!-- Stage 2: Chunk -->
+        <div id="stage-chunk" class="stage-card bg-surface-container-lowest border border-outline-variant/10 p-5 w-full lg:w-44 flex-shrink-0 border-t-2 border-t-[#0891B2]/60">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-label text-[8px] text-outline uppercase tracking-widest">02</span>
+            <span class="material-symbols-outlined text-[#0891B2]/70 text-lg">content_cut</span>
+          </div>
+          <h4 class="font-headline text-sm font-bold mb-1">Chunk</h4>
+          <p class="text-[11px] text-on-surface-variant leading-relaxed mb-4">Split into 512-char pieces with 64-char overlap.</p>
+          <div class="bg-surface-container-low rounded p-2.5">
+            <code class="font-label text-[10px] text-on-surface">RecursiveChunker(512, 64)</code>
+          </div>
+          <div class="mt-3 space-y-1">
+            <div class="h-3 bg-blue-100 rounded-sm w-full"></div>
+            <div class="flex gap-0.5">
+              <div class="h-3 bg-blue-200 rounded-sm w-1/2"></div>
+              <div class="h-3 bg-blue-300/50 rounded-sm w-1/4"></div>
+              <div class="h-3 bg-blue-200 rounded-sm w-1/3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 3: Embed -->
+        <div id="stage-embed" class="stage-card bg-surface-container-lowest border border-outline-variant/10 p-5 w-full lg:w-44 flex-shrink-0 border-t-2 border-t-[#0891B2]/60">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-label text-[8px] text-outline uppercase tracking-widest">03</span>
+            <span class="material-symbols-outlined text-[#0891B2]/70 text-lg">hub</span>
+          </div>
+          <h4 class="font-headline text-sm font-bold mb-1">Embed</h4>
+          <p class="text-[11px] text-on-surface-variant leading-relaxed mb-4">Convert text → 384-dim float vectors. Auto-detects backend.</p>
+          <div class="bg-surface-container-low rounded p-2.5">
+            <code class="font-label text-[10px] text-on-surface">AutoEmbed()</code>
+          </div>
+          <div class="mt-3 flex gap-0.5 items-end" id="heatmap"></div>
+          <div class="font-label text-[8px] text-outline mt-1.5">[0.12, -0.34, 0.87, 0.05, ...]</div>
+        </div>
+
+        <!-- Stage 4: Store -->
+        <div id="stage-store" class="stage-card bg-surface-container-lowest border border-outline-variant/10 p-5 w-full lg:w-44 flex-shrink-0 border-t-2 border-t-[#0891B2]/60">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-label text-[8px] text-outline uppercase tracking-widest">04</span>
+            <span class="material-symbols-outlined text-[#0891B2]/70 text-lg">storage</span>
+          </div>
+          <h4 class="font-headline text-sm font-bold mb-1">Store</h4>
+          <p class="text-[11px] text-on-surface-variant leading-relaxed mb-4">Persist vectors + text + metadata to a vector database.</p>
+          <div class="bg-surface-container-low rounded p-2.5">
+            <code class="font-label text-[10px] text-on-surface">JSONSink("./index.json")</code>
+          </div>
+          <div class="flex gap-1.5 mt-3">
+            <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">Qdrant</span>
+            <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">Pinecone</span>
+            <span class="font-label text-[8px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant/20">JSON</span>
+          </div>
+        </div>
+
+        <!-- Stage 5: Query -->
+        <div id="stage-query" class="stage-card bg-surface-container-lowest border border-outline-variant/10 p-5 w-full lg:w-44 flex-shrink-0 border-t-2 border-t-[#0891B2]/60">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-label text-[8px] text-outline uppercase tracking-widest">05</span>
+            <span class="material-symbols-outlined text-[#0891B2]/70 text-lg">search</span>
+          </div>
+          <h4 class="font-headline text-sm font-bold mb-1">Query</h4>
+          <p class="text-[11px] text-on-surface-variant leading-relaxed mb-4">Embed query, compute cosine similarity, return top-K.</p>
+          <div class="bg-surface-container-low rounded p-2.5">
+            <code class="font-label text-[10px] text-on-surface">query("How does auth work?")</code>
+          </div>
+          <div class="flex items-center gap-1.5 mt-3">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#0891B2]"></div>
+            <span class="font-label text-[9px] text-outline">0.89</span>
+            <div class="w-1.5 h-1.5 rounded-full bg-[#0891B2]/70"></div>
+            <span class="font-label text-[9px] text-outline">0.85</span>
+            <div class="w-1.5 h-1.5 rounded-full bg-[#0891B2]/50"></div>
+            <span class="font-label text-[9px] text-outline">0.82</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Embedding Backend Fallback -->
+      <div class="mt-12 bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-5 max-w-2xl">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-[#0891B2] text-base">swap_horiz</span>
+          <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-widest font-bold">AutoEmbed Fallback Chain</span>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-1.5">
+            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+            <span class="font-label text-[10px] text-green-700 font-semibold">1. Ollama</span>
+            <span class="font-label text-[9px] text-green-600/70">local, free</span>
+          </div>
+          <span class="material-symbols-outlined text-outline-variant text-sm">arrow_forward</span>
+          <div class="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded px-3 py-1.5">
+            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+            <span class="font-label text-[10px] text-blue-700 font-semibold">2. OpenAI</span>
+            <span class="font-label text-[9px] text-blue-600/70">cloud, API key</span>
+          </div>
+          <span class="material-symbols-outlined text-outline-variant text-sm">arrow_forward</span>
+          <div class="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded px-3 py-1.5">
+            <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+            <span class="font-label text-[10px] text-purple-700 font-semibold">3. sentence-transformers</span>
+            <span class="font-label text-[9px] text-purple-600/70">local, free</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-on-surface-variant mt-3">Zero configuration. Tries each backend in order and uses the first available. No API key required.</p>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- QUERY -->
-  <div class="query-box" id="qBox">
-    <div class="stage-head" style="margin-bottom:16px"><div class="stage-num">5</div><div class="stage-name">Query</div></div>
-    <input class="query-input" id="qInp" placeholder='Try: "embedding backends" or "CLI features" or "vector database"...' />
-    <div class="results" id="results"></div>
-  </div>
-
-  <!-- CODE -->
-  <div class="code-panel" id="code">
-    <div class="cl" id="c0"><span class="p">$ </span><span class="c">ragpipe index .</span></div>
-    <div class="cl" id="c1"><span class="d">  Detecting project...</span></div>
-    <div class="cl" id="c2"></div>
-    <div class="cl" id="c3"><span class="p">$ </span><span class="c">ragpipe query</span> <span class="d">"how does auth work?"</span></div>
-    <div class="cl" id="c4"><span class="d">  Searching...</span></div>
-    <div class="cl" id="c5"></div>
-  </div>
-
-  <!-- CTA -->
-  <div class="cta">
-    <h2>Try it yourself</h2>
-    <p>One install. Zero config. Any language. Works offline.</p>
-    <div class="cta-install" id="cta-install" onclick="copyInstall()">
-      <span class="cta-install-prompt">$</span>
-      <code>pip install ragpipe-ai</code>
-      <span class="cta-install-copied" id="cta-copied">Copied!</span>
+  <!-- SEC.03 — Embedding Space -->
+  <section id="embeddings" class="py-24 px-8">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div>
+        <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-[0.2em]">SEC.03 — Vector Retrieval</span>
+        <h2 class="text-3xl font-headline font-bold mt-2 mb-5">Embedding Space</h2>
+        <p class="text-on-surface-variant leading-relaxed mb-6 text-sm">
+          Each document chunk becomes a point in 384-dimensional space. Chunks about similar topics cluster together geometrically. When you query, RAGPipe finds the nearest points by cosine similarity.
+        </p>
+        <div class="bg-surface-container-low border-l-4 border-[#0891B2] p-4 rounded-r-lg mb-6">
+          <div class="font-label text-[9px] text-[#0891B2] uppercase tracking-widest mb-1.5">Algorithm: Cosine Similarity</div>
+          <div class="font-label text-lg tracking-wider text-on-surface">
+            cos(A,B) = <span class="border-b-2 border-[#0891B2]/30 pb-0.5">A · B</span> / (|A| × |B|)
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-3">
+            <div class="font-label text-[9px] text-outline uppercase tracking-widest">Query Time</div>
+            <div class="font-headline text-xl font-bold text-on-surface mt-1">0.20s</div>
+            <div class="font-label text-[9px] text-outline">keyword search, top-5</div>
+          </div>
+          <div class="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-3">
+            <div class="font-label text-[9px] text-outline uppercase tracking-widest">Index Time</div>
+            <div class="font-headline text-xl font-bold text-on-surface mt-1">0.71s</div>
+            <div class="font-label text-[9px] text-outline">2,267 files, 7,388 chunks</div>
+          </div>
+        </div>
+      </div>
+      <div class="relative aspect-square bg-surface-container-lowest border border-outline-variant/10 rounded-xl p-8 shadow-sm">
+        <div class="absolute inset-0 blueprint-grid opacity-[0.03] rounded-xl"></div>
+        <div class="absolute top-1/4 left-1/4 w-36 h-36 bg-blue-100/50 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-1/4 right-1/3 w-28 h-28 bg-green-100/50 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 right-1/4 w-32 h-32 bg-orange-100/50 rounded-full blur-3xl"></div>
+        <div class="relative w-full h-full border-l border-b border-outline-variant/20">
+          <!-- Axis labels -->
+          <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 font-label text-[8px] text-outline">Dimension 1 (t-SNE)</div>
+          <div class="absolute -left-5 top-1/2 -translate-y-1/2 -rotate-90 font-label text-[8px] text-outline">Dimension 2</div>
+          <!-- Legend -->
+          <div class="absolute top-2 right-2 font-label text-[8px] text-outline space-y-1.5">
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-400"></div>Code (.py)</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-green-400"></div>Docs (.md)</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-orange-400"></div>Config (.yaml)</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div>Query</div>
+          </div>
+          <!-- Blue cluster -->
+          <div class="absolute top-[18%] left-[12%] w-2 h-2 rounded-full bg-blue-400/70"></div>
+          <div class="absolute top-[22%] left-[20%] w-2 h-2 rounded-full bg-blue-400/50"></div>
+          <div class="absolute top-[15%] left-[25%] w-2 h-2 rounded-full bg-blue-400/60"></div>
+          <div class="absolute top-[28%] left-[16%] w-2 h-2 rounded-full bg-blue-400/40"></div>
+          <div class="absolute top-[20%] left-[30%] w-1.5 h-1.5 rounded-full bg-blue-400/50"></div>
+          <div class="absolute top-[32%] left-[22%] w-1.5 h-1.5 rounded-full bg-blue-400/60"></div>
+          <div class="absolute top-[25%] left-[18%] w-1.5 h-1.5 rounded-full bg-blue-400/70"></div>
+          <!-- Green cluster -->
+          <div class="absolute top-[60%] left-[15%] w-2 h-2 rounded-full bg-green-400/60"></div>
+          <div class="absolute top-[65%] left-[22%] w-2 h-2 rounded-full bg-green-400/50"></div>
+          <div class="absolute top-[58%] left-[28%] w-2 h-2 rounded-full bg-green-400/70"></div>
+          <div class="absolute top-[70%] left-[18%] w-1.5 h-1.5 rounded-full bg-green-400/40"></div>
+          <div class="absolute top-[63%] left-[12%] w-1.5 h-1.5 rounded-full bg-green-400/60"></div>
+          <!-- Orange cluster -->
+          <div class="absolute top-[45%] left-[55%] w-2 h-2 rounded-full bg-orange-400/50"></div>
+          <div class="absolute top-[50%] left-[60%] w-2 h-2 rounded-full bg-orange-400/60"></div>
+          <div class="absolute top-[42%] left-[65%] w-1.5 h-1.5 rounded-full bg-orange-400/40"></div>
+          <div class="absolute top-[52%] left-[52%] w-1.5 h-1.5 rounded-full bg-orange-400/70"></div>
+          <!-- Scattered -->
+          <div class="absolute top-[40%] left-[38%] w-1.5 h-1.5 rounded-full bg-blue-300/30"></div>
+          <div class="absolute top-[75%] left-[45%] w-1.5 h-1.5 rounded-full bg-green-300/30"></div>
+          <div class="absolute top-[35%] left-[70%] w-1.5 h-1.5 rounded-full bg-orange-300/30"></div>
+          <!-- Query point -->
+          <div class="absolute top-[53%] left-[62%] w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)] z-10"></div>
+          <div class="absolute top-[53%] left-[62%] w-20 h-20 -ml-[36px] -mt-[36px] border border-red-400/25 rounded-full border-dashed"></div>
+          <!-- Match 1 -->
+          <div class="absolute top-[56%] left-[72%]">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#0891B2] shadow-[0_0_8px_rgba(8,145,178,0.5)]"></div>
+            <div class="absolute top-3 -left-1 bg-white px-1.5 py-0.5 shadow-sm border border-outline-variant/15 font-label text-[9px] whitespace-nowrap rounded">SIM 0.89</div>
+            <div class="absolute -top-[3px] -left-[3px] w-4 h-4 border border-[#0891B2]/30 rounded-full"></div>
+          </div>
+          <!-- Match 2 -->
+          <div class="absolute top-[48%] left-[56%]">
+            <div class="w-2 h-2 rounded-full bg-[#0891B2]/80 shadow-[0_0_6px_rgba(8,145,178,0.4)]"></div>
+            <div class="absolute top-3 -left-1 bg-white px-1.5 py-0.5 shadow-sm border border-outline-variant/15 font-label text-[9px] whitespace-nowrap rounded">SIM 0.85</div>
+          </div>
+          <!-- Match 3 -->
+          <div class="absolute top-[60%] left-[58%]">
+            <div class="w-2 h-2 rounded-full bg-[#0891B2]/60 shadow-[0_0_6px_rgba(8,145,178,0.3)]"></div>
+            <div class="absolute top-3 -left-1 bg-white px-1.5 py-0.5 shadow-sm border border-outline-variant/15 font-label text-[9px] whitespace-nowrap rounded">SIM 0.82</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="cta-links">
-      <a href="https://github.com/avasis-ai/ragpipe" target="_blank">
-        <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
-      <a href="https://pypi.org/project/ragpipe-ai/" target="_blank">
-        <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M4 4h3l3 8H4V4zm0 8h2v4H4v-4zm10-4v2h-2v2h2v-2zM8 2v2h2V4H8v2z"/></svg>
-        PyPI
-      </a>
-      <a href="https://github.com/avasis-ai/ragpipe#comparison" target="_blank">
-        <svg viewBox="0 0 16 16" fill="currentColor" style="width:16px;height:16px"><path d="M4 6h2v8H4V6zm10 0h2v8h-2V6z"/></svg>
-        Compare
-      </a>
+  </section>
+
+  <!-- SEC.04 — Code Comparison -->
+  <section id="comparison" class="py-20 px-8 bg-surface-container-low/40">
+    <div class="max-w-5xl mx-auto">
+      <div class="mb-12 text-center">
+        <span class="font-label text-[10px] text-[#0891B2] uppercase tracking-[0.2em]">SEC.04 — Implementation</span>
+        <h2 class="text-2xl font-headline font-bold mt-2">The Comparison</h2>
+        <p class="text-on-surface-variant text-sm mt-2">Same result. Different complexity.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant/15 rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+        <!-- LangChain -->
+        <div class="bg-surface-container-lowest p-6 md:p-8">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2 text-error/70 font-label text-[10px] uppercase tracking-widest font-bold">
+              <span class="material-symbols-outlined text-sm">close</span>LangChain
+            </div>
+            <span class="font-label text-[9px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">40 lines · 5+ pkgs</span>
+          </div>
+          <div class="font-label text-[11px] space-y-2.5 opacity-70 leading-relaxed">
+            <p><span class="text-blue-600">from</span> langchain_community.document_loaders <span class="text-blue-600">import</span> WebBaseLoader</p>
+            <p><span class="text-blue-600">from</span> langchain_text_splitters <span class="text-blue-600">import</span> RecursiveCharacterTextSplitter</p>
+            <p><span class="text-blue-600">from</span> langchain_openai <span class="text-blue-600">import</span> OpenAIEmbeddings</p>
+            <p><span class="text-blue-600">from</span> langchain_core.vectorstores <span class="text-blue-600">import</span> InMemoryVectorStore</p>
+            <p class="text-outline-variant pt-2">loader = WebBaseLoader(web_paths=(...))</p>
+            <p class="text-outline-variant">docs = loader.load()</p>
+            <p class="text-outline-variant">splits = RecursiveCharacterTextSplitter(<br>&nbsp;&nbsp;chunk_size=1000, chunk_overlap=200<br>).split_documents(docs)</p>
+            <p class="text-outline-variant">vector_store = InMemoryVectorStore(<br>&nbsp;&nbsp;OpenAIEmbeddings())</p>
+            <p class="text-outline-variant">vector_store.add_documents(splits)</p>
+            <p class="text-outline-variant pt-2"># ... then wire up retriever + LLM chain</p>
+            <p class="text-outline-variant"># ... 20+ more lines to query</p>
+          </div>
+        </div>
+        <!-- RAGPipe -->
+        <div class="bg-surface-container-lowest p-6 md:p-8 relative">
+          <div class="absolute top-4 right-4 bg-[#0891B2] text-white px-2.5 py-0.5 rounded-full text-[8px] font-label font-bold uppercase tracking-wider">13x less code</div>
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2 text-[#0891B2] font-label text-[10px] uppercase tracking-widest font-bold">
+              <span class="material-symbols-outlined text-sm">check_circle</span>RAGPipe
+            </div>
+            <span class="font-label text-[9px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full">3 lines · 1 pkg</span>
+          </div>
+          <div class="font-label text-[11px] space-y-2.5 leading-relaxed">
+            <p class="text-blue-600"><span class="text-blue-600">import</span> ragpipe</p>
+            <p class="pt-2"><span class="text-outline-variant"># Ingest anything</span></p>
+            <p>ragpipe.<span class="text-[#0891B2] font-semibold">ingest</span>(<span class="text-orange-600">"./docs"</span>)</p>
+            <p class="pt-2"><span class="text-outline-variant"># Query your data</span></p>
+            <p>results = ragpipe.<span class="text-[#0891B2] font-semibold">query</span>(<span class="text-orange-600">"What is the refund policy?"</span>)</p>
+            <div class="mt-6 pt-4 border-t border-outline-variant/10">
+              <p class="text-on-surface-variant text-[10px]"># Or via CLI</p>
+              <p class="mt-1"><span class="text-[#0891B2]">$</span> ragpipe ingest ./docs</p>
+              <p><span class="text-[#0891B2]">$</span> ragpipe query "refund policy?"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature table -->
+      <div class="mt-12 bg-surface-container-lowest border border-outline-variant/10 rounded-xl overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-surface-container-low border-b border-outline-variant/10">
+              <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3">Feature</th>
+              <th class="font-label text-[9px] text-[#0891B2] uppercase tracking-widest p-3 text-center">RAGPipe</th>
+              <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-center">LangChain</th>
+              <th class="font-label text-[9px] text-outline uppercase tracking-widest p-3 text-center">LlamaIndex</th>
+            </tr>
+          </thead>
+          <tbody class="font-label text-[11px]">
+            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">Basic RAG</td><td class="p-3 text-center text-[#0891B2] font-semibold">3 lines</td><td class="p-3 text-center text-on-surface-variant">40 lines</td><td class="p-3 text-center text-on-surface-variant">5 lines</td></tr>
+            <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">Packages</td><td class="p-3 text-center text-[#0891B2] font-semibold">1</td><td class="p-3 text-center text-on-surface-variant">5+</td><td class="p-3 text-center text-on-surface-variant">2-3</td></tr>
+            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">CLI</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center text-outline-variant">separate</td><td class="p-3 text-center text-outline-variant">separate</td></tr>
+            <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">YAML pipelines</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
+            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">Git hooks</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
+            <tr class="border-b border-outline-variant/5 bg-surface-container-low/30"><td class="p-3 text-on-surface-variant">Zero-config embed</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td><td class="p-3 text-center text-outline-variant">partial</td></tr>
+            <tr class="border-b border-outline-variant/5"><td class="p-3 text-on-surface-variant">REST API server</td><td class="p-3 text-center"><span class="material-symbols-outlined text-[#0891B2] text-sm align-middle">check</span></td><td class="p-3 text-center text-outline-variant">separate</td><td class="p-3 text-center"><span class="material-symbols-outlined text-outline-variant/30 text-sm align-middle">close</span></td></tr>
+            <tr><td class="p-3 text-on-surface-variant">Document loaders</td><td class="p-3 text-center text-on-surface-variant">3</td><td class="p-3 text-center text-[#0891B2] font-semibold">160+</td><td class="p-3 text-center text-[#0891B2] font-semibold">300+</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- SEC.05 — CTA -->
+  <section class="py-24 px-8 flex justify-center">
+    <div class="max-w-xl w-full border-2 border-dashed border-outline-variant/25 p-10 relative">
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-surface px-4 font-label text-[9px] text-[#0891B2] uppercase tracking-[0.3em]">SEC.05 — Execute</div>
+      <div class="text-center">
+        <h2 class="text-3xl font-headline font-bold mb-3 tracking-tight">Ready to Pipeline?</h2>
+        <p class="text-on-surface-variant text-sm mb-8">One install. Zero config. Any data source.</p>
+        <div class="copy-box inline-flex items-center gap-3 bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-5 py-3 shadow-sm cursor-pointer mb-8" onclick="copyText(this, 'pip install ragpipe-ai')">
+          <span class="material-symbols-outlined text-[#0891B2] text-lg">$</span>
+          <code class="font-label text-sm text-on-surface select-all">pip install ragpipe-ai</code>
+          <button class="text-outline-variant hover:text-[#0891B2] transition-colors" onclick="event.stopPropagation(); copyText(this.parentElement, 'pip install ragpipe-ai')">
+            <span class="material-symbols-outlined text-base">content_copy</span>
+          </button>
+        </div>
+        <div class="flex justify-center gap-4 flex-wrap">
+          <a href="https://github.com/avasis-ai/ragpipe" target="_blank" class="flex items-center gap-2 bg-[#00647c] text-white font-label text-[10px] px-5 py-2.5 rounded-lg uppercase tracking-widest hover:bg-[#007f9d] transition-colors">
+            <span class="material-symbols-outlined text-sm">code</span>GitHub
+          </a>
+          <a href="https://pypi.org/project/ragpipe-ai/" target="_blank" class="flex items-center gap-2 border border-outline-variant text-on-surface font-label text-[10px] px-5 py-2.5 rounded-lg uppercase tracking-widest hover:bg-surface-container-low transition-colors">
+            <span class="material-symbols-outlined text-sm">inventory_2</span>PyPI
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="w-full py-8 border-t border-outline-variant/10 bg-surface-container-low/30">
+    <div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-6xl mx-auto gap-4">
+      <div class="font-label text-[9px] uppercase tracking-widest text-outline">
+        &copy; 2025 avasis-ai &middot; BSL 1.1 &middot; Apache 2.0 for non-competing use
+      </div>
+      <div class="flex gap-6">
+        <a class="font-label text-[9px] uppercase tracking-widest text-outline hover:text-[#0891B2] transition-colors" href="https://github.com/avasis-ai/ragpipe" target="_blank">GitHub</a>
+        <a class="font-label text-[9px] uppercase tracking-widest text-outline hover:text-[#0891B2] transition-colors" href="https://pypi.org/project/ragpipe-ai/" target="_blank">PyPI</a>
+        <a class="font-label text-[9px] uppercase tracking-widest text-outline hover:text-[#0891B2] transition-colors" href="https://github.com/avasis-ai/ragpipe/blob/main/LICENSE" target="_blank">License</a>
+      </div>
+    </div>
+  </footer>
 </main>
 
 <script>
-const DATA={
-  code:`class AuthService:
-    def __init__(self, config: dict):
-n        self.token_store = TokenStore()
-        self.max_retries = config.get("max_retries", 3)
-
-    def authenticate(self, username: str, password: str) -> Token:
-n        user = self.user_repo.find_by_username(username)
-        if not user or not verify_password(password, user.password_hash):
-n            raise AuthenticationError("Invalid credentials")
-        token = self.token_store.create(user.id, expires_in=3600)
-n        return token
-
-    def refresh(self, token: Token) -> Token:
-n        if self.token_store.is_revoked(token):
-n            raise TokenExpiredError("Token has been revoked")
-        return self.token_store.create(token.user_id, expires_in=3600)
-
-    def revoke(self, token: Token) -> None:
-n        self.token_store.revoke(token.jti)`,
-  docs:`# Getting Started with RAGPipe
-
-RAGPipe is a declarative RAG pipeline library for Python that converts raw documents into searchable vector embeddings.
-
-## Installation
-
-pip install ragpipe-ai
-
-## Quick Start
-
-Ingest any data source with a single command:
-
-    ragpipe ingest ./docs
-
-This automatically detects file types, chunks text into 512-character pieces with 64-character overlap, and stores the results in a JSON file.
-
-## Querying
-
-Search your indexed data:
-
-    ragpipe query "What is the refund policy?"
-
-Results are ranked by keyword similarity. For semantic search, add the --embed flag and ensure Ollama or OpenAI is available.
-
-## Smart Indexing
-
-Index an entire codebase with smart language detection:
-
-    ragpipe index .
-
-This auto-detects Python, Node.js, Rust, Go, and other projects, ignores build artifacts and dependencies, and produces search-ready chunks.
-
-## Embedding Backends
-
-RAGPipe auto-detects available backends in this order: Ollama (local, free), OpenAI (requires API key), and sentence-transformers (local, free). No configuration needed.`,
-  api:`POST /api/v1/embeddings
-Host: localhost:11434
-Content-Type: application/json
-
-{"model": "nomic-embed-text",
- "prompt": "RAGPipe is a declarative RAG pipeline"}
-
-Response: {"embedding": [0.0231, -0.0092, 0.0456, ...], "dimension": 768}
-
-POST /api/v1/chat/completions
-Host: localhost:11434
-Content-Type: application/json
-
-{"model": "qwen3-coder-next",
- "messages": [{"role": "user", "content": "Explain RAGPipe in one sentence"}]}
-
-Response: {"message": {"content": "RAGPipe is a Python library that ingests, chunks, embeds, and stores documents for retrieval-augmented generation."}}`
-};
-
-let state = {chunks:[],queryResults:[]};
-let timer = null;
-
-function $(id){return document.getElementById(id)}
-
-function load(key){$('inp').value=DATA[key];}
-
-function setStep(n){
-  document.querySelectorAll('.step-dot').forEach((d,i)=>{
-    const s=i+1;
-    d.className='step-dot'+(s===n?' active':'')+(s<n?' done':'');
-  });
-  document.querySelectorAll('.step-line').forEach((l,i)=>{
-    l.className='step-line'+(i+1<n?' done':'');
-  });
-}
-
-function on(id){$(id).classList.add('on')}
-function done(id){const el=$(id);el.classList.remove('on');el.classList.add('done')}
-function cl(id,html){const el=$(id);el.innerHTML=html;el.classList.add('vis')}
-
-function wait(ms){return new Promise(r=>{timer=setTimeout(r,ms)})}
-
-function chunk(text,size=140){
-  const sents=text.replace(/\n+/g,'\n').split(/(?<=[.!?])\s+/);
-  const out=[];let cur='';
-  for(const s of sents){
-    if((cur+s).length>size&&cur){out.push(cur.trim());cur=s}
-    else cur+=(cur?' ':'')+s;
-  }
-  if(cur.trim())out.push(cur.trim());
-  return out;
-}
-
-async function go(){
-  if(timer){clearTimeout(timer);timer=null}
-  const text=$('inp').value.trim();
-  if(!text)return;
-
-  // reset
-  document.querySelectorAll('.glass').forEach(g=>{g.classList.remove('on','done')});
-  $('qBox').classList.remove('vis');
-  $('results').innerHTML='';
-  for(let i=0;i<6;i++){const el=$('c'+i);el.innerHTML='';el.classList.remove('vis')}
-  $('dbBody').classList.remove('lit');$('dbTop').classList.remove('lit');
-  $('dbNum').textContent='0';
-  $('dbBody').innerHTML='';
-
-  // Step 1
-  setStep(1);on('s1');
-  cl('c0','<span class="p">$ </span><span class="c">ragpipe index .</span>');
-  await wait(500);
-
-  // Step 2
-  setStep(2);done('s1');on('s2');
-  cl('c1','<span class="d">  Detected 1 file, chunking...</span>');
-  const chunks=chunk(text);
-  const grid=$('chunks');grid.innerHTML='';
-  chunks.forEach((c,i)=>{
-    const d=document.createElement('div');d.className='chunk';
-    d.innerHTML=`<div class="chunk-label">Chunk ${i+1}</div><div class="chunk-text">${c.substring(0,90)}</div><div class="chunk-meta">${c.length} chars</div>`;
-    grid.appendChild(d);
-    setTimeout(()=>d.classList.add('vis'),60+i*100);
-  });
-  $('chunkInfo').textContent=`${chunks.length} chunks · ${Math.round(chunks.reduce((a,c)=>a+c.length,0)/chunks.length)} avg chars`;
-  state.chunks=chunks;
-  await wait(chunks.length*100+400);
-  cl('c2',`<span class="g">  ✓</span><span class="d"> ${chunks.length} chunks created</span>`);
-  await wait(300);
-
-  // Step 3
-  setStep(3);done('s2');on('s3');
-  const ec=$('embeds');ec.innerHTML='';
-  chunks.forEach((c,i)=>{
-    const row=document.createElement('div');row.className='embed-viz';
-    for(let j=0;j<20;j++){
-      const b=document.createElement('div');b.className='bar';
-      const h=8+Math.abs(Math.sin(i*3.7+j*.7))*68;
-      const hue=230+j*6;const l=48+(h/80)*20;
-      b.style.cssText=`left:${(j/20)*100}%;height:${h}%;background:hsl(${hue},72%,${l}%);animation-delay:${(i*20+j)*10}ms`;
-      row.appendChild(b);
-    }
-    ec.appendChild(row);
-    setTimeout(()=>row.classList.add('vis'),150+i*120);
-  });
-  const dims=[384,512,768,1536][Math.floor(Math.random()*4)];
-  $('embedInfo').textContent=`${chunks.length} embeddings · ${dims} dimensions`;
-  await wait(chunks.length*120+500);
-
-  // Step 4
-  setStep(4);done('s3');on('s4');
-  $('dbBody').classList.add('lit');$('dbTop').classList.add('lit');
-  const body=$('dbBody');
-  const count=Math.min(chunks.length,50);
-  for(let i=0;i<count;i++){
-    const dot=document.createElement('div');dot.className='dot';
-    const hue=180+Math.random()*60;
-    dot.style.cssText=`left:${2+Math.random()*48}px;top:${2+Math.random()*38}px;background:hsl(${hue},65%,55%);animation-delay:${i*30}ms`;
-    body.appendChild(dot);
-  }
-  let cn=0;const iv=setInterval(()=>{cn++;$('dbNum').textContent=cn;if(cn>=count)clearInterval(iv)},25);
-  await wait(count*30+400);
-  done('s4');setStep(5);
-
-  // Step 5
-  $('qBox').classList.add('vis');
-  cl('c3','<span class="p">$ </span><span class="c">ragpipe query</span> <span class="d">"how does auth work?"</span>');
-  cl('c4','<span class="d">  Searching...</span>');
-  await wait(300);
-  const qr=searchChunks("embedding backends");
-  showResults(qr,"embedding backends");
-  cl('c5',`<span class="g">  ✓</span><span class="d"> Found ${qr.length} results</span>`);
-  $('qInp').focus();
-}
-
-function searchChunks(q){
-  const terms=q.toLowerCase().split(/\s+/).filter(t=>t.length>2);
-  return state.chunks.map((c,i)=>{
-    const low=c.toLowerCase();const hits=terms.reduce((a,t)=>a+(low.includes(t)?1:0),0);
-    return{chunk:c,score:hits/terms.length,index:i};
-  }).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
-}
-
-function showResults(results,q){
-  const list=$('results');list.innerHTML='';
-  results.forEach(r=>{
-    const d=document.createElement('div');d.className='result';
-    d.innerHTML=`<div class="result-score">${(r.score*100).toFixed(0)}% match · chunk ${r.index+1}</div>
-      <div class="result-body">${hl(r.chunk.substring(0,180),q)}</div>
-      <div class="result-meta">${r.chunk.length} chars</div>`;
-    list.appendChild(d);
-  });
-}
-
-function hl(text,q){
-  if(!q)return text;
-  q.toLowerCase().split(/\s+/).filter(t=>t.length>2).forEach(t=>{
-    const re=new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi');
-    text=text.replace(re,'<mark>$1</mark>');
-  });
-  return text;
-}
-
-$('qInp').addEventListener('input',e=>{
-  const q=e.target.value;
-  if(q.length>3){const r=searchChunks(q);showResults(r,q)}
-  else{$('results').innerHTML=''}
+// Generate heatmap strip for embedding visualization
+const hm = document.getElementById('heatmap');
+const vals = [0.12,-0.34,0.87,0.05,-0.62,0.41,0.73,-0.18,0.56,-0.91,0.33,0.78,-0.45,0.19,0.64,-0.27,0.85,-0.53,0.38,0.71,-0.14,0.59,-0.82,0.26,0.47,-0.69,0.15,0.93,-0.31,0.58];
+vals.forEach(v => {
+  const el = document.createElement('span');
+  el.className = 'heatmap-cell';
+  const norm = (v + 1) / 2;
+  const r = Math.round(norm * 180 + 40);
+  const g = Math.round((1 - Math.abs(v)) * 100 + 80);
+  const b = Math.round((1 - norm) * 180 + 60);
+  el.style.background = `rgb(${r},${g},${b})`;
+  hm.appendChild(el);
 });
 
-setTimeout(go,600);
-
-function copyInstall(){
-  navigator.clipboard.writeText('pip install ragpipe-ai');
-  const el=document.getElementById('cta-copied');
-  el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),1500);
+function copyText(el, text) {
+  navigator.clipboard.writeText(text);
+  const orig = el.querySelector('code').textContent;
+  el.querySelector('code').textContent = 'Copied!';
+  el.style.borderColor = '#22C55E';
+  setTimeout(() => {
+    el.querySelector('code').textContent = orig;
+    el.style.borderColor = '';
+  }, 1200);
 }
+
+// Smooth scroll for nav links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
 </script>
 </body>
 </html>
