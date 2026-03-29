@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ragpipe"
+name = "ragpipe-ai"
 version = "0.1.0"
 description = "RAG in 3 functions. Ingest any data source into vector databases."
 readme = "README.md"
@@ -40,19 +40,19 @@ openai = ["openai>=1.0"]
 local = ["sentence-transformers>=2.2"]
 watch = ["watchdog>=3.0"]
 all = [
-    "ragpipe[cli]",
-    "ragpipe[web]",
-    "ragpipe[qdrant]",
-    "ragpipe[pinecone]",
-    "ragpipe[openai]",
-    "ragpipe[local]",
-    "ragpipe[watch]",
+    "ragpipe-ai[cli]",
+    "ragpipe-ai[web]",
+    "ragpipe-ai[qdrant]",
+    "ragpipe-ai[pinecone]",
+    "ragpipe-ai[openai]",
+    "ragpipe-ai[local]",
+    "ragpipe-ai[watch]",
 ]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "ruff>=0.1",
-    "ragpipe[cli,web]",
+    "ragpipe-ai[cli,web]",
 ]
 
 [project.scripts]
