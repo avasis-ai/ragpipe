@@ -4,10 +4,9 @@
 
 **RAG in 3 functions.**
 
-[![PyPI version](https://img.shields.io/pypi/v/ragpipe?color= cyan)](https://pypi.org/project/ragpipe/)
+[![GitHub stars](https://img.shields.io/github/stars/avasis-ai/ragpipe?style=social)](https://github.com/avasis-ai/ragpipe)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-BSL_1.1-green.svg)](LICENSE)
-[![install](https://img.shields.io/badge/install-pip_install_ragpipe-orange)](#install)
 
 *Sources → Transforms → Sinks for vector databases.*
 
