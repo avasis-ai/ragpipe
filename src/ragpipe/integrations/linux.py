@@ -128,7 +128,7 @@ def generate_systemd_timer(
     return timer_content
 
 
-def generate_systemd_timer_service(
+def generate_systemd_timer_service(, service_content
     name: str = "ragpipe-index",
     project_path: str = ".",
 ) -> str:

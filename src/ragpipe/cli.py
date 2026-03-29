@@ -602,14 +602,17 @@ def timer(
     ),
     install_flag: bool = typer.Option(False, "--install", help="Install to systemd"),
 ):
-    from ragpipe.integrations.linux import is_linux, generate_systemd_timer
+    from ragpipe.integrations.linux import (
+        is_linux,
+        generate_systemd_timer,
+        generate_systemd_timer_service,
+    )
 
     if not is_linux():
         console.print("[red]✗[/red] Linux only.")
         raise typer.Exit(1)
-    timer_content, service_content = generate_systemd_timer(
-        name=name, project_path=project_path, interval=interval
-    )
+    timer_content = generate_systemd_timer(name=name, project_path=project_path, interval=interval)
+    service_content = generate_systemd_timer_service(name=name, project_path=project_path)
     if install_flag:
         from ragpipe.integrations.linux import install_service
 

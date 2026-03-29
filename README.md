@@ -153,7 +153,7 @@ ragpipe macos index ~/projects/my-app
 
 ```bash
 ragpipe linux service --install     # install as systemd service
-ragpipe linux timer . --daily        # auto-index on schedule
+ragpipe linux timer . -i daily        # auto-index on schedule
 ```
 
 ### With embeddings (auto-detects Ollama → OpenAI → sentence-transformers)

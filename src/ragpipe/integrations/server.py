@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-from functools import partial
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 from urllib.parse import urlparse
@@ -151,12 +150,11 @@ def serve(
     host: str = "127.0.0.1",
     port: int = 7642,
 ) -> None:
-    handler_class = partial(_Handler)  # type: ignore[assignment]
-    handler_class.data_path = data_path  # type: ignore[attr-defined]
+    _Handler.data_path = data_path  # type: ignore[attr-defined]
 
-    handler_class._load_data(handler_class)  # type: ignore[attr-defined]
+    _Handler._load_data(_Handler)  # type: ignore[attr-defined]
 
-    server = HTTPServer((host, port), handler_class)
+    server = HTTPServer((host, port), _Handler)
     url = f"http://{host}:{port}"
     print(f"RAGPipe server running at {url}")
     print(f"  GET /        — status")
