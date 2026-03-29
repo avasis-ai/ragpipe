@@ -30,8 +30,8 @@ class AutoEmbed:
 
         if self.fallback:
             for backend_name, check_fn, init_fn in [
-                ("openai", self._check_openai, self._init_openai),
                 ("ollama", self._check_ollama, self._init_ollama),
+                ("openai", self._check_openai, self._init_openai),
                 ("sentence_transformers", self._check_st, self._init_st),
             ]:
                 if check_fn():
@@ -61,7 +61,10 @@ class AutoEmbed:
     def _check_openai(self) -> bool:
         try:
             import openai
+            import os
 
+            if not self.base_url and not os.environ.get("OPENAI_API_KEY"):
+                return False
             return True
         except ImportError:
             return False

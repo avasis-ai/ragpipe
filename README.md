@@ -57,7 +57,7 @@ pip install 'ragpipe-ai[all]'         # everything
 
 </details>
 
-## The 3 functions
+## The 3 API calls
 
 ```python
 import ragpipe
@@ -201,11 +201,11 @@ ragpipe run pipeline.yaml
 
 `AutoEmbed` tries each backend in order and uses the first available:
 
-| Priority | Backend | Setup |
-|----------|---------|-------|
-| 1 | **Ollama** (local) | `ollama pull nomic-embed-text` |
-| 2 | **OpenAI** | Set `OPENAI_API_KEY` |
-| 3 | **sentence-transformers** (local) | `pip install 'ragpipe-ai[local]'` |
+| Priority | Backend | Dimensions | Setup |
+|---|---|---|---|
+| 1 | **Ollama** (local) | 768 | `ollama pull nomic-embed-text` |
+| 2 | **OpenAI** | 1536 | Set `OPENAI_API_KEY` |
+| 3 | **sentence-transformers** (local) | 384 | `pip install 'ragpipe-ai[local]'` |
 
 Or point to any OpenAI-compatible API:
 
@@ -387,7 +387,7 @@ RAGPipe isn't trying to be LangChain. It's **ops-native RAG infrastructure** —
 
 ## Why RAGPipe?
 
-- **3 functions.** `ingest()`, `query()`, `pipe()`. That's the whole API.
+- **3 API calls.** `ingest()`, `query()`, `Pipeline()`. That's the whole surface area.
 - **Zero config.** Auto-detects files, auto-embeds with whatever you have installed.
 - **YAML pipelines.** Declarative configs like `docker-compose` for RAG.
 - **Beautiful CLI.** Rich progress bars, tables, and status spinners.
