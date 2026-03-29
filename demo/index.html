@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAGPipe — How RAG Works</title>
+<meta name="description" content="Interactive demo: watch how RAGPipe converts raw documents into searchable vector embeddings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #09090B;
+  --bg-secondary: #111113;
+  --bg-tertiary: #18181B;
+  --bg-elevated: #1F1F23;
+  --border: #27272A;
+  --border-active: #3F3F46;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --accent: #6366F1;
+  --accent-glow: #818CF8;
+  --accent-dim: #4F46E5;
+  --green: #22C55E;
+  --amber: #F59E0B;
+  --cyan: #06B6D4;
+  --red: #EF4444;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+a { color: var(--accent-glow); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header {
+  text-align: center;
+  padding: 60px 24px 40px;
+}
+header h1 {
+  font-size: 40px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #06B6D4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+}
+header p { color: var(--text-secondary); font-size: 18px; max-width: 500px; margin: 0 auto; }
+.header-code {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--cyan);
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ─── PIPELINE STAGES ─── */
+.pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: 40px 0;
+  position: relative;
+}
+.stage {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 280px;
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.stage.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  border-color: var(--accent);
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.1);
+}
+.stage.completed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  border-color: var(--green);
+}
+.stage-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stage-label .num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+.stage.active .stage-label .num {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px var(--accent);
+}
+.stage.completed .stage-label .num {
+  background: var(--green);
+  color: #fff;
+}
+.stage-content { font-size: 13px; color: var(--text-secondary); }
+
+/* Arrow connectors */
+.connector {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  min-width: 32px;
+}
+.connector svg {
+  width: 24px;
+  height: 24px;
+  color: var(--border);
+  transition: color 0.4s ease;
+}
+.connector.active svg { color: var(--accent); }
+.connector.completed svg { color: var(--green); }
+
+/* ─── STEP 1: INPUT ─── */
+.input-area {
+  width: 100%;
+  min-height: 120px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.input-area:focus { border-color: var(--accent); }
+.input-area::placeholder { color: var(--text-muted); }
+.input-btns { display: flex; gap: 8px; margin-top: 12px; }
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn:hover { border-color: var(--accent); background: var(--bg-elevated); }
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-dim); }
+
+/* ─── STEP 2: CHUNKS ─── */
+.chunks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.chunk-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+.chunk-card.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.chunk-card.highlight {
+  border-color: var(--green);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.15);
+}
+.chunk-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.chunk-chars {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  font-size: 9px;
+  margin-top: 4px;
+}
+
+/* Scan line */
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  top: 0;
+  opacity: 0;
+}
+.scan-line.active {
+  opacity: 1;
+  animation: scan 1.2s ease-in-out;
+}
+@keyframes scan {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ─── STEP 3: EMBEDDINGS ─── */
+.embedding-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.embedding-viz {
+  width: 100%;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.embedding-viz.visible {
+  opacity: 1;
+  transform: scaleX(1);
+}
+.vec-bar {
+  position: absolute;
+  bottom: 0;
+  width: 3px;
+  border-radius: 1px 1px 0 0;
+  transform-origin: bottom center;
+  transform: scaleY(0);
+  animation: bar-grow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes bar-grow {
+  0% { transform: scaleY(0); }
+  60% { transform: scaleY(1.1); }
+  100% { transform: scaleY(1); }
+}
+
+/* ─── STEP 4: STORE ─── */
+.db-icon {
+  width: 80px;
+  height: 80px;
+  margin: 20px auto;
+  position: relative;
+}
+.db-cylinder {
+  width: 60px;
+  height: 50px;
+  border: 2px solid var(--border);
+  border-radius: 4px 4px 8px 8px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.db-cylinder.active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+}
+.db-ellipse {
+  width: 60px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  margin: -3px auto 0;
+  transition: border-color 0.3s ease;
+}
+.db-ellipse.active { border-color: var(--cyan); }
+.db-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  position: absolute;
+  opacity: 0;
+  animation: dot-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes dot-in {
+  0% { opacity: 0; transform: scale(0); }
+  60% { transform: scale(1.4); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+.db-count {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── STEP 5: QUERY ─── */
+.query-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.query-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.query-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.query-input:focus { border-color: var(--accent); }
+.query-input::placeholder { color: var(--text-muted); }
+.results-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.result-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: result-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes result-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+.result-card:nth-child(1) { animation-delay: 100ms; }
+.result-card:nth-child(2) { animation-delay: 250ms; }
+.result-card:nth-child(3) { animation-delay: 400ms; }
+.result-score {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 4px;
+}
+.result-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.result-text mark {
+  background: rgba(99, 102, 241, 0.25);
+  color: var(--accent-glow);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+.result-source {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ─── CODE OUTPUT ─── */
+.code-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  overflow: hidden;
+}
+.code-line {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+  white-space: pre;
+}
+.code-line.visible { opacity: 1; }
+.code-line .prompt { color: var(--text-muted); }
+.code-line .cmd { color: var(--cyan); }
+.code-line .success { color: var(--green); }
+.code-line .error { color: var(--red); }
+.code-line .dim { color: var(--text-muted); }
+
+/* ─── STEP INDICATOR ─── */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 32px 0 24px;
+}
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.step-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  transform: scale(1.3);
+}
+.step-dot.completed { background: var(--green); }
+.step-line {
+  width: 24px;
+  height: 2px;
+  background: var(--border);
+  transition: background 0.4s ease;
+}
+.step-line.completed { background: var(--green); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .pipeline { flex-direction: column; }
+  .connector { transform: rotate(90deg); padding: 4px 0; }
+  .chunks-grid { grid-template-columns: 1fr; }
+  header h1 { font-size: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RAGPipe</h1>
+  <p>Watch how RAG converts raw text into searchable vector embeddings — in real time.</p>
+  <div class="header-code">ragpipe index . && ragpipe query "how does auth work?"</div>
+</header>
+
+<main>
+  <div class="step-indicator" id="stepIndicator">
+    <div class="step-dot" data-step="1"></div>
+    <div class="step-line" data-step="1"></div>
+    <div class="step-dot" data-step="2"></div>
+    <div class="step-line" data-step="2"></div>
+    <div class="step-dot" data-step="3"></div>
+    <div class="step-line" data-step="3"></div>
+    <div class="step-dot" data-step="4"></div>
+    <div class="step-line" data-step="4"></div>
+    <div class="step-dot" data-step="5"></div>
+  </div>
+
+  <div class="pipeline">
+    <!-- STAGE 1: INPUT -->
+    <div class="stage" id="stage1">
+      <div class="stage-label"><span class="num">1</span> INPUT</div>
+      <div class="stage-content">
+        <textarea class="input-area" id="inputText" placeholder="Paste any text here, or click a sample below...">RAGPipe is a declarative RAG pipeline library for Python. It supports ingesting data from files, git repositories, and web pages. The three main functions are ingest(), query(), and Pipeline(). You can also use the CLI with commands like ragpipe ingest and ragpipe query.
+
+RAGPipe supports multiple embedding backends including Ollama, OpenAI, and sentence-transformers. It auto-detects the best available backend.
+
+Vector database sinks include Qdrant, Pinecone, and JSON files for local development. The CLI provides rich progress bars, result tables, and status spinners built with Typer and Rich.
+
+Smart indexing auto-detects your project type and ignores the right files. Git hooks auto-index after every commit. VSCode tasks are generated for one-click indexing from your editor.</textarea>
+        <div class="input-btns">
+          <button class="btn btn-primary" onclick="runPipeline()">Run Pipeline</button>
+          <button class="btn" onclick="loadSample('code')">Code Sample</button>
+          <button class="btn" onclick="loadSample('docs')">Docs Sample</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector" id="conn1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+
+    <!-- STAGE 2: CHUNKS -->
+    <div class="stage" id="stage2">
+      <div class="stage-label"><span class="num">2</span> CHUNK</div>
+      <div class="stage-content">
+        <div class="chunks-grid" id="chunksGrid"></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-muted);" id="chunkStats"></div>
+      </div>
+    </div>
+
+    <div class="connector" id="conn2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+
+    <!-- STAGE 3: EMBED -->
+    <div class="stage" id="stage3">
+      <div class="stage-label"><span class="num">3</span> EMBED</div>
+      <div class="stage-content">
+        <div id="embedVizContainer" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-muted);" id="embedStats"></div>
+      </div>
+    </div>
+
+    <div class="connector" id="conn3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+
+    <!-- STAGE 4: STORE -->
+    <div class="stage" id="stage4">
+      <div class="stage-label"><span class="num">4</span> STORE</div>
+      <div class="stage-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;">
+        <div class="db-icon">
+          <div class="db-ellipse" id="dbEllipse"></div>
+          <div class="db-cylinder" id="dbCylinder">
+            <div class="scan-line" id="dbScan"></div>
+          </div>
+        </div>
+        <div class="db-count" id="dbCount">0</div>
+        <div style="font-size:11px;color:var(--text-muted);">vectors stored</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 5: QUERY -->
+  <div class="query-section" id="querySection">
+    <div class="stage-label" style="margin-bottom:16px;"><span class="num">5</span> QUERY</div>
+    <input class="query-input" id="queryInput" placeholder="Type a question... (try: &quot;embedding backends&quot; or &quot;CLI features&quot;)" />
+    <div class="results-list" id="resultsList"></div>
+  </div>
+
+  <!-- CODE OUTPUT -->
+  <div class="code-panel" id="codePanel">
+    <div class="code-line" id="code0"><span class="prompt">$ </span><span class="cmd">ragpipe index .</span></div>
+    <div class="code-line" id="code1"><span class="dim">  Scanning project...</span></div>
+    <div class="code-line" id="code2"></div>
+    <div class="code-line" id="code3"><span class="prompt">$ </span><span class="cmd">ragpipe query</span> <span class="dim">"how does auth work?"</span></div>
+    <div class="code-line" id="code4"><span class="dim">  Searching...</span></div>
+    <div class="code-line" id="code5"></div>
+  </div>
+</main>
+
+<script>
+const SAMPLES = {
+  code: `class AuthService:\n    def __init__(self, config: dict):\n        self.token_store = TokenStore()\n        self.max_retries = config.get("max_retries", 3)\n\n    def authenticate(self, username: str, password: str) -> Token:\n        user = self.user_repo.find_by_username(username)\n        if not user or not verify_password(password, user.password_hash):\n            raise AuthenticationError("Invalid credentials")\n        token = self.token_store.create(user.id, expires_in=3600)\n        return token\n\n    def refresh(self, token: Token) -> Token:\n        if self.token_store.is_revoked(token):\n            raise TokenExpiredError("Token has been revoked")\n        return self.token_store.create(token.user_id, expires_in=3600)\n\n    def revoke(self, token: Token) -> None:\n        self.token_store.revoke(token.jti)`,
+  docs: `# Getting Started with RAGPipe\n\nRAGPipe is a declarative RAG pipeline library for Python that converts raw documents into searchable vector embeddings.\n\n## Installation\n\npip install ragpipe[cli]\n\n## Quick Start\n\nIngest any data source with a single command:\n\n    ragpipe ingest ./docs\n\nThis automatically detects file types, chunks text into 512-character pieces with 64-character overlap, and stores the results in a JSON file.\n\n## Querying\n\nSearch your indexed data:\n\n    ragpipe query "What is the refund policy?"\n\nResults are ranked by keyword similarity. For semantic search, add the --embed flag and ensure Ollama or OpenAI is available.\n\n## Smart Indexing\n\nIndex an entire codebase with smart language detection:\n\n    ragpipe index .\n\nThis auto-detects Python, Node.js, Rust, Go, and other projects, ignores build artifacts and dependencies, and produces search-ready chunks.\n\n## Embedding Backends\n\nRAGPipe auto-detects available backends in this order: Ollama (local, free), OpenAI (requires API key), and sentence-transformers (local, free). No configuration needed.`
+};
+
+let pipelineState = { chunks: [], embeddings: [], queryResults: [] };
+let animTimeout = null;
+
+function loadSample(type) {
+  document.getElementById('inputText').value = SAMPLES[type];
+}
+
+function showCodeLine(id, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.classList.add('visible');
+}
+
+function setStep(step) {
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    const s = i + 1;
+    d.classList.toggle('active', s === step);
+    d.classList.toggle('completed', s < step);
+  });
+  document.querySelectorAll('.step-line').forEach((l, i) => {
+    const s = i + 1;
+    l.classList.toggle('completed', s < step);
+  });
+}
+
+function activateStage(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+function completeStage(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('active');
+  el.classList.add('completed');
+}
+
+function activateConnector(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+function completeConnector(id) {
+  document.getElementById(id).classList.remove('active');
+  document.getElementById(id).classList.add('completed');
+}
+
+function chunkText(text, size = 150) {
+  const sentences = text.replace(/\n+/g, '\n').split(/(?<=[.!?])\s+/);
+  const chunks = [];
+  let current = '';
+  for (const s of sentences) {
+    if ((current + s).length > size && current) {
+      chunks.push(current.trim());
+      current = s;
+    } else {
+      current += (current ? ' ' : '') + s;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
+
+function animateChunks(chunks) {
+  const grid = document.getElementById('chunksGrid');
+  grid.innerHTML = '';
+  chunks.forEach((chunk, i) => {
+    const card = document.createElement('div');
+    card.className = 'chunk-card';
+    card.innerHTML = `<div class="chunk-label">Chunk ${i + 1}</div><div>${chunk.substring(0, 80)}${chunk.length > 80 ? '...' : ''}</div><div class="chunk-chars">${chunk.length} chars</div>`;
+    grid.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 80 + i * 120);
+  });
+  document.getElementById('chunkStats').textContent = `${chunks.length} chunks · ~${Math.round(chunks.reduce((a, c) => a + c.length, 0) / chunks.length)} avg chars`;
+  pipelineState.chunks = chunks;
+}
+
+function animateEmbeddings(chunks) {
+  const container = document.getElementById('embedVizContainer');
+  container.innerHTML = '';
+  chunks.forEach((chunk, i) => {
+    const viz = document.createElement('div');
+    viz.className = 'embedding-viz';
+    const barCount = 24;
+    for (let j = 0; j < barCount; j++) {
+      const bar = document.createElement('div');
+      bar.className = 'vec-bar';
+      const height = 10 + Math.abs(Math.sin(i * 3.7 + j * 0.8)) * 70;
+      const hue = 230 + j * 6;
+      const lightness = 50 + (height / 80) * 20;
+      bar.style.cssText = `left:${(j / barCount) * 100}%;height:${height}%;background:hsl(${hue},75%,${lightness}%);animation-delay:${(i * barCount + j) * 12}ms;`;
+      viz.appendChild(bar);
+    }
+    container.appendChild(viz);
+    setTimeout(() => viz.classList.add('visible'), 200 + i * 150);
+  });
+  const dims = [384, 512, 768, 1536][Math.floor(Math.random() * 4)];
+  document.getElementById('embedStats').textContent = `${chunks.length} embeddings · ${dims} dimensions`;
+  pipelineState.embeddings = chunks.map(() => dims);
+}
+
+function animateStore(count) {
+  const cylinder = document.getElementById('dbCylinder');
+  const ellipse = document.getElementById('dbEllipse');
+  cylinder.classList.add('active');
+  ellipse.classList.add('active');
+  cylinder.innerHTML = '';
+  for (let i = 0; i < Math.min(count, 40); i++) {
+    const dot = document.createElement('div');
+    dot.className = 'db-dot';
+    const hue = 180 + Math.random() * 60;
+    dot.style.cssText = `left:${4 + Math.random() * 52}px;top:${4 + Math.random() * 42}px;background:hsl(${hue},70%,60%);animation-delay:${i * 40}ms;`;
+    cylinder.appendChild(dot);
+  }
+  const countEl = document.getElementById('dbCount');
+  let c = 0;
+  const interval = setInterval(() => {
+    c++;
+    countEl.textContent = c;
+    if (c >= count) clearInterval(interval);
+  }, 30);
+}
+
+function searchChunks(query) {
+  const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+  if (!terms.length) return [];
+  const scored = pipelineState.chunks.map((chunk, i) => {
+    const lower = chunk.toLowerCase();
+    const hits = terms.reduce((a, t) => a + (lower.includes(t) ? 1 : 0), 0);
+    return { chunk, score: hits / terms.length, index: i };
+  }).filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+  return scored.slice(0, 3);
+}
+
+function highlightText(text, query) {
+  if (!query) return text;
+  const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+  let result = text;
+  terms.forEach(t => {
+    const regex = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    result = result.replace(regex, '<mark>$1</mark>');
+  });
+  return result;
+}
+
+function animateResults(results, query) {
+  const list = document.getElementById('resultsList');
+  list.innerHTML = '';
+  results.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.animationDelay = `${100 + i * 150}ms`;
+    card.innerHTML = `<div class="result-score">${(r.score * 100).toFixed(0)}% match · chunk ${r.index + 1}</div><div class="result-text">${highlightText(r.chunk.substring(0, 200), query)}${r.chunk.length > 200 ? '...' : ''}</div><div class="result-source">${r.chunk.length} characters</div>`;
+    list.appendChild(card);
+  });
+}
+
+async function runPipeline() {
+  if (animTimeout) { clearTimeout(animTimeout); animTimeout = null; }
+  const text = document.getElementById('inputText').value.trim();
+  if (!text.length) return;
+
+  const querySection = document.getElementById('querySection');
+  querySection.classList.remove('visible');
+  document.getElementById('resultsList').innerHTML = '';
+  document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active', 'completed'); });
+  document.querySelectorAll('.connector').forEach(c => c.classList.remove('active', 'completed'));
+  for (let i = 0; i < 6; i++) {
+    const cl = document.getElementById(`code${i}`);
+    cl.innerHTML = '';
+    cl.classList.remove('visible');
+  }
+
+  // Step 1: Input
+  setStep(1);
+  activateStage('stage1');
+  showCodeLine('code0', '<span class="prompt">$ </span><span class="cmd">ragpipe index .</span>');
+  await wait(600);
+
+  // Step 2: Chunk
+  setStep(2);
+  completeStage('stage1');
+  activateConnector('conn1');
+  activateStage('stage2');
+  showCodeLine('code1', '<span class="dim">  Detected 1 file, chunking...</span>');
+  const chunks = chunkText(text);
+  await wait(300);
+  animateChunks(chunks);
+  await wait(chunks.length * 120 + 500);
+  showCodeLine('code2', `<span class="success">  ✓</span><span class="dim"> Created ${chunks.length} chunks</span>`);
+  await wait(400);
+
+  // Step 3: Embed
+  setStep(3);
+  completeStage('stage2');
+  activateConnector('conn2');
+  activateStage('stage3');
+  animateEmbeddings(chunks);
+  await wait(chunks.length * 150 + 600);
+  showCodeLine('code3', '<span class="prompt">$ </span><span class="cmd">ragpipe query</span> <span class="dim">"embedding backends"</span>');
+  await wait(300);
+
+  // Step 4: Store
+  setStep(4);
+  completeStage('stage3');
+  activateConnector('conn3');
+  activateStage('stage4');
+  animateStore(chunks.length);
+  await wait(chunks.length * 40 + 600);
+  showCodeLine('code4', '<span class="dim">  Searching...</span>');
+  await wait(400);
+  completeStage('stage4');
+  setStep(5);
+
+  // Step 5: Query
+  querySection.classList.add('visible');
+  showCodeLine('code5', `<span class="success">  ✓</span><span class="dim"> Found ${Math.min(3, chunks.length)} results</span>`);
+  document.getElementById('queryInput').focus();
+}
+
+document.getElementById('queryInput').addEventListener('input', (e) => {
+  const q = e.target.value;
+  if (q.length > 3) {
+    const results = searchChunks(q);
+    animateResults(results, q);
+  } else {
+    document.getElementById('resultsList').innerHTML = '';
+  }
+});
+
+function wait(ms) { return new Promise(r => { animTimeout = setTimeout(r, ms); }); }
+
+// Auto-run on load with default text
+setTimeout(runPipeline, 800);
+</script>
+
+</body>
+</html>
