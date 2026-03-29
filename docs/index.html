@@ -66,7 +66,7 @@
         "codeRepository": "https://github.com/avasis-ai/ragpipe",
         "license": "https://github.com/avasis-ai/ragpipe/blob/main/LICENSE",
         "author": { "@type": "Organization", "name": "avasis-ai" },
-        "keywords": ["RAG", "vector database", "embeddings", "Python", "Qdrant", "Pinecone", "semantic search", "pipeline", "CLI"]
+        "keywords": ["RAG", "vector database", "embeddings", "Python", "Qdrant", "Pinecone", "semantic search", "pipeline", "CLI", "VSCode", "systemd", "git hooks", "fzf", "code indexer", "macOS Spotlight"]
     }
     </script>
 </head>
@@ -241,6 +241,44 @@ sinks:
                         <tr><td>3</td><td>sentence-transformers (local, free)</td><td><code>pip install ragpipe[local]</code></td></tr>
                     </tbody>
                 </table>
+            </section>
+
+            <section class="section">
+                <h2>System Integrations</h2>
+                <div class="features">
+                    <div class="feature">
+                        <h3>Smart Index</h3>
+                        <p><code>ragpipe index .</code> — auto-detects language, ignores node_modules/.git, chunks and stores.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>File Watcher</h3>
+                        <p><code>ragpipe watch .</code> — auto-reindexes on every file change. Uses watchdog.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>REST API</h3>
+                        <p><code>ragpipe serve</code> — local API with <code>/search</code>, <code>/health</code>, <code>/chunks</code>, <code>/reindex</code> on port 7642.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Git Hooks</h3>
+                        <p><code>ragpipe git hook .</code> — auto-index after every commit. Invisible, zero-friction.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>VSCode</h3>
+                        <p><code>ragpipe vscode tasks .</code> — generates tasks.json with Index/Query/Serve/Watch tasks.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>fzf</h3>
+                        <p><code>ragpipe search --fzf</code> — interactive fuzzy search through your indexed data.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>macOS Spotlight</h3>
+                        <p><code>ragpipe macos spotlight "query"</code> — search via native mdfind.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Linux systemd</h3>
+                        <p><code>ragpipe linux service --install</code> — run as a systemd service. Scheduled indexing with timers.</p>
+                    </div>
+                </div>
             </section>
 
             <div class="cta">

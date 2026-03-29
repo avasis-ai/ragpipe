@@ -274,6 +274,10 @@ for doc in docs:
 - **Any source.** Files, git repos, web pages — one interface.
 - **Any vector DB.** Qdrant, Pinecone, or just a JSON file.
 - **Local-first.** Works with Ollama and sentence-transformers. No API keys needed.
+- **Smart indexing.** `ragpipe index .` auto-detects your language and ignores the right files.
+- **System integration.** Git hooks, VSCode tasks, macOS Spotlight, Linux systemd.
+- **REST API.** `ragpipe serve` exposes `/search`, `/health`, `/chunks` for any tool.
+- **fzf.** `ragpipe search --fzf` for interactive terminal search.
 - **Typed.** Full type annotations, mypy-friendly.
 
 ---
