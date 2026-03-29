@@ -83,18 +83,57 @@ def query(
     top_k: int = 5,
     embed_model: str | None = None,
     embed_base_url: str | None = None,
+    mode: str = "auto",
     **kwargs: Any,
 ) -> list[Document]:
+    import json
+
+    if sink == "json":
+        data = json.loads(Path(sink_path).read_text())
+
+    has_embeddings = (
+        sink == "json" and any(d.get("embedding") for d in data) if sink == "json" else True
+    )
+
+    if mode == "auto":
+        mode = "semantic" if has_embeddings else "keyword"
+
+    if mode == "keyword":
+        if sink == "json":
+            query_terms = set(text.lower().split())
+            scored: list[tuple[float, dict]] = []
+            for item in data:
+                content_lower = item["content"].lower()
+                hits = sum(1 for t in query_terms if t in content_lower)
+                score = hits / max(len(query_terms), 1)
+                scored.append((score, item))
+            scored.sort(key=lambda x: x[0], reverse=True)
+            results = []
+            for score, item in scored[:top_k]:
+                if score > 0:
+                    results.append(
+                        Document(
+                            content=item["content"],
+                            metadata={
+                                **item.get("metadata", {}),
+                                "score": score,
+                                "mode": "keyword",
+                            },
+                        )
+                    )
+            return results
+        raise ValueError("Keyword search only supported for JSON sink")
+
     embedder = AutoEmbed(model=embed_model, base_url=embed_base_url)
     query_embedding = embedder.embed_single(text)
     if query_embedding is None:
-        raise RuntimeError("Failed to generate query embedding")
+        logger.warning("Embedding failed, falling back to keyword search")
+        return query(
+            text=text, sink=sink, sink_path=sink_path, top_k=top_k, mode="keyword", **kwargs
+        )
 
     if sink == "json":
-        import json
-
-        data = json.loads(Path(sink_path).read_text())
-        scored: list[tuple[float, dict]] = []
+        scored = []
         for item in data:
             emb = item.get("embedding")
             if emb is None:
@@ -107,14 +146,12 @@ def query(
             results.append(
                 Document(
                     content=item["content"],
-                    metadata={**item.get("metadata", {}), "score": score},
+                    metadata={**item.get("metadata", {}), "score": score, "mode": "semantic"},
                 )
             )
         return results
     elif sink == "qdrant":
-        from ragpipe.sinks import QdrantSink
         from qdrant_client import QdrantClient
-        from qdrant_client.models import NamedVector
 
         client = QdrantClient(
             url=kwargs.get("qdrant_url", "http://localhost:6333"),
@@ -131,6 +168,7 @@ def query(
                 metadata={
                     **{k: v for k, v in (hit.payload or {}).items() if k != "content"},
                     "score": hit.score,
+                    "mode": "semantic",
                 },
             )
             for hit in hits
