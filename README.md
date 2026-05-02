@@ -413,3 +413,5 @@ Business Source License 1.1 (BSL 1.1). **Non-competing use is Apache 2.0.** See 
 Built by [avasis-ai](https://github.com/avasis-ai)
 
 </div>
+
+**Looking for production-grade agent infrastructure?** Check out [SynthCode Pro](https://whop.com/checkout/plan_KspZxhIoW87gd) — 8 neurosymbolic verification gates, model fallback chains, semantic caching, and observability. $149 one-time.
